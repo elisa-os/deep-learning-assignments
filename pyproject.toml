@@ -1,5 +1,5 @@
 [project]
-name = "pa1"
+name = "deep-learning-assignments"
 version = "0.1.0"
 description = "PA1 — Segmentação de Instâncias (Aprendizado Profundo, FGV)"
 readme = "README.md"
@@ -8,6 +8,7 @@ authors = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "albumentations>=2.0.8",
     "jupyter>=1.1.1",
     "matplotlib>=3.11.1",
     "notebook>=7.6.2",
@@ -28,3 +29,7 @@ pa1 = "pa1.main:main"
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-root = "."
+module-name = "pa1"

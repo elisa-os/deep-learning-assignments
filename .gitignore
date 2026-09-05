@@ -14,13 +14,20 @@ build/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# Outputs gerados (commits intencionais são feitos explicitamente)
+# Outputs e checkpoints gerados
+outputs/
+**/outputs/
 checkpoints/
-data/
+**/checkpoints/
 wandb/
 runs/
 *.pt
 *.pth
+
+# Datasets brutos pesados (manter apenas scripts de download/geração)
+**/stage1_train/
+**/data/raw/
+**/data/processed/
 
 # OS
 .DS_Store
