@@ -1,7 +1,7 @@
 [project]
-name = "deep-learning-assignments"
+name = "pa1"
 version = "0.1.0"
-description = "Add your description here"
+description = "PA1 — Segmentação de Instâncias (Aprendizado Profundo, FGV)"
 readme = "README.md"
 authors = [
     { name = "Bruno Ferreira", email = "brunoferreira17k@gmail.com" }
@@ -9,11 +9,21 @@ authors = [
 requires-python = ">=3.11"
 dependencies = [
     "jupyter>=1.1.1",
+    "matplotlib>=3.11.1",
     "notebook>=7.6.2",
+    "numpy>=2.4.6",
+    "opencv-python-headless>=5.0.0",
+    "pyyaml>=6.0.3",
+    "scikit-image>=0.26.0",
+    "scikit-learn>=1.9.0",
+    "scipy>=1.0",
+    "torch>=2.14.0",
 ]
 
 [project.scripts]
-deep-learning-assignments = "deep_learning_assignments:main"
+pa1 = "pa1.main:main"
+
+[tool.uv.sources]
 
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]

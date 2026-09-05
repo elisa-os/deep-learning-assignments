@@ -1,0 +1,28 @@
+# ──────────────────────────────────────────────
+# Configuração de treinamento (PA1)
+# Edite este arquivo para mudar qualquer parâmetro.
+# Uso: uv run pa1
+# ──────────────────────────────────────────────
+
+seed: 42
+output_dir: outputs
+
+# ── Dados ───────────────────────────────────────
+data:
+  synthetic: true        # true = elipses sintéticas (Parte 0)
+  data_dir: null         # caminho dos dados reais (Partes 1+)
+  n_samples: 500         # amostras no dataset sintético
+  batch_size: 8
+  num_workers: 2
+
+# ── Modelo ──────────────────────────────────────
+model:
+  in_channels: 1         # 1 = escala de cinza, 3 = RGB
+  out_channels: 2        # 2 = binário (fundo/objeto)
+
+# ── Treino ──────────────────────────────────────
+train:
+  epochs: 20
+  lr: 1.0e-3
+  checkpoint: null       # ex: outputs/pa1/model.pt
+  eval_only: false       # true = pula treino, só avalia

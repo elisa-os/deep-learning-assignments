@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+
+# uv / virtualenv
+.venv/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Outputs gerados (commits intencionais são feitos explicitamente)
+outputs/
+checkpoints/
+data/raw/
+data/processed/
+wandb/
+runs/
+*.pt
+*.pth
+
+# OS
+.DS_Store
+Thumbs.db
