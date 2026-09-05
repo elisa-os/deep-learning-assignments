@@ -15,7 +15,6 @@ build/
 *.ipynb_checkpoints
 
 # Outputs gerados (commits intencionais são feitos explicitamente)
-outputs/
 checkpoints/
 data/
 wandb/
