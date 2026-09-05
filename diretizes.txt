@@ -1,0 +1,11 @@
+Diretrizes para esse projeto:
+
+Implementação com auxílio de IA, mas com foco na didática e aprendizado humano, por isso tudo deve ser documentado e justificado, para não perder clareza durante o processo: decisões, implementações, justificativas, conteúdo...
+
+Um exemplo obrigatório do que deve ser feito para a filosofia acima: referenciar no README onde cada Parte do arquivo PA1.pdf (paretes 0 ao 6) explicando como foi implementado a parte, onde ela foi implementada, e como reproduzir seus resultados..
+
+Prefira soluções simples, didáticas e funcionais a soluções sofisticadas mas complexas
+
+
+Documente interações com a IA no AI_LOG.md, para registrarmos o que foi feito usando esta ferramenta de inteligencia artificial
+

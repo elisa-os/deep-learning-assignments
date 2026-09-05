@@ -17,8 +17,7 @@ build/
 # Outputs gerados (commits intencionais são feitos explicitamente)
 outputs/
 checkpoints/
-data/raw/
-data/processed/
+data/
 wandb/
 runs/
 *.pt
