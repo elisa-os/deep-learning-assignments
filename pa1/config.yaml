@@ -5,13 +5,13 @@
 # ──────────────────────────────────────────────
 
 seed: 42
-output_dir: outputs
+output_dir: ../outputs
 
 # ── Dados ───────────────────────────────────────
 data:
   synthetic: false       # false = dados reais DSB2018, true = elipses sintéticas (Parte 0)
   data_dir: pa1/data/stage1_train # caminho dos dados reais do DSB2018
-  n_samples: 500         # amostras no dataset sintético (quando synthetic: true)
+  n_samples: 100         # amostras no dataset sintético (quando synthetic: true)
   batch_size: 8
   num_workers: 2
 

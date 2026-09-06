@@ -61,56 +61,70 @@ Consulte o documento completo:
 
 ---
 
-## 🚀 Como Rodar a Parte 1 do PA1 (Baseline de Segmentação Semântica)
+## 🚀 Como Rodar o PA1
 
-A **Parte 1** estabelece o baseline binário: treina uma U-Net para segmentação semântica do DSB2018 e quantifica o fracasso da abordagem ingênua (componentes conexos) em imagens com alta densidade de núcleos.
+O Pipeline do PA1 é controlado pela flag `synthetic` em `pa1/config.yaml` (ou via CLI `--synthetic`/`--no-synthetic`). Os demais parâmetros (`data_dir`, `epochs`, `lr`, etc.) também podem ser sobrescritos diretamente na linha de comando.
 
-### Pré-requisitos
+### Parte 0 — Teste unitário sintético (elipses)
 
-O projeto usa [`uv`](https://docs.astral.sh/uv/) para gerenciar dependências e ambientes virtuais.
-
-```bash
-# Instalação do uv (se ainda não tiver)
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Ou via pip
-pip install uv
-
-# Sincroniza dependências e cria o ambiente virtual isolado (.venv)
-uv sync
-```
-
-### Dados
-
-Os dados do DSB2018 (`stage1_train`) precisam estar em `pa1/data/stage1_train/`. 
-Se ainda não estão disponíveis, baixe e extraia o dataset seguindo as instruções do enunciado do PA1.
-
-### Execução
+Treina com dataset sintético de elipses e gera os gráficos + grid qualitativo. Roda em poucos minutos.
 
 ```bash
-# 1. Treinar a U-Net binária (baseline) com configuração padrão:
-uv run python -m pa1.main --epochs 20 --lr 1e-3
+# 1. Com configuração padrão (YAML): configura epochs, lr, batch_size no config.yaml
+uv run pa1 --synthetic
 
-# 2. Treinar com parâmetros personalizados (útil para testes rápidos):
-uv run python -m pa1.main --epochs 5 --lr 1e-3 --batch-size 4
+# 2. Sobrescrevendo epochs explicitamente na linha de comando:
+uv run pa1 --synthetic --epochs 10     # default no YAML: 20; ajuste conforme necessidade
 
-# 3. Avaliar apenas (sem retreinar) usando checkpoint salvo:
-uv run python -m pa1.main --eval-only --checkpoint pa1/outputs/checkpoint.pt
+# 3. Teste rápido com menos épocas e batch pequeno:
+uv run pa1 --synthetic --epochs 5 --batch-size 16 --lr 1e-3
 
-# 4. Rodar com dados sintéticos (elipses) para validação rápida do pipeline:
-uv run python -m pa1.main --synthetic --epochs 5
+# 4. Avaliação só (sem retreinar) a partir de checkpoint:
+uv run pa1 --synthetic --eval-only --checkpoint outputs/parte0_checkpoint.pt
 ```
 
-### Saídas da Parte 1
+**Saídas (em `outputs/`):**
+- `outputs/synthetic_samples.png` — grid 2×4 com imagens + máscara de instâncias sintéticas
+- `outputs/parte0_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
+- `outputs/parte0_qualitativo.png` — grid 4×4 comparativo (imagem / GT / predição / binário)
 
-Após o treino, as seguintes figuras são geradas em `pa1/outputs/`:
+### Parte 1 — Baseline com dados reais (DSB2018)
 
-| Arquivo | Descrição |
-|---------|-----------|
-| `parte0_resultados.png` | Gráficos de loss, métricas semânticas (IoU/Dice) e dispersão mAP vs. densidade de objetos |
-| `parte0_qualitativo.png` | Grid 4×N comparando Imagem Original, GT de Instâncias, Predições e Máscara Binária |
+Treina U-Net binária sobre microscopia de núcleos e reporta IoU/Dice + mAP de instâncias.
 
-> **Regra de histórico:** Se uma imagem com o mesmo nome já existir na raiz de `pa1/outputs/`, ela é substituída pela mais recente. Caso deseje arquivar execuções anteriores, crie subpastas dentro de `pa1/outputs/` (ex: `pa1/outputs/historico/`); o pipeline não mexe nem lê arquivos dentro de subpastas.
+**Pré-requisito:** o diretório `pa1/data/stage1_train/` com as imagens e máscaras do DSB2018 deve existir (baixe e extraia conforme o enunciado do PA1).
+
+```bash
+# 1. Treino completo com configuração padrão (YAML):
+uv run pa1 --no-synthetic
+
+# 2. Sobrescrevendo epochs explicitamente:
+uv run pa1 --no-synthetic --epochs 20   # default no YAML: 20; ajuste conforme necessidade
+
+# 3. Execução rápida de teste (reduz epochs e batch):
+uv run pa1 --no-synthetic --epochs 5 --batch-size 4 --lr 1e-3
+
+# 4. Avaliação só (sem retreinar) a partir de checkpoint salvo:
+uv run pa1 --no-synthetic --eval-only --checkpoint outputs/parte1_checkpoint.pt
+```
+
+> **Dica de epochs:** o YAML `pa1/config.yaml` define o número de epochs usado quando nenhuma flag `--epochs` é passada. Para rodar com um número específico, passe `--epochs N` na linha de comando (ex: `--epochs 20`). Ambos os modos aceitam a mesma flag.
+
+**Saídas (em `outputs/`):**
+- `outputs/parte1_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
+- `outputs/parte1_qualitativo.png` — grid 4×4 comparativo sobre dados reais (imagem / GT / predição / binário)
+
+## 📦 Saídas do Pipeline
+
+Todas as figuras são salvas diretamente em `outputs/` (raiz do projeto). Se o arquivo já existir, ele é substituído. Para arquivar execuções anteriores, crie subpastas dentro de `outputs/` (ex: `outputs/historico/`); o pipeline não lê nem modifica arquivos dentro de subpastas.
+
+| Arquivo | Quando é gerado | Descrição |
+|---------|-----------------|-----------|
+| `outputs/synthetic_samples.png` | Parte 0 (sintético) | Grid 2×4: imagens de elipses + máscaras de instâncias coloridas |
+| `outputs/parte0_resultados.png` | Parte 0 (sintético) | Painel 3 gráficos: loss, IoU/Dice semânticos, mAP vs. densidade |
+| `outputs/parte0_qualitativo.png` | Parte 0 (sintético) | Grid 4×4: imagem original, GT instâncias, predição, GT binário |
+| `outputs/parte1_resultados.png` | Parte 1 (DSB2018) | Mesmo formato do parte0_resultados.png, mas sobre dados reais |
+| `outputs/parte1_qualitativo.png` | Parte 1 (DSB2018) | Mesmo formato do parte0_qualitativo.png, mas sobre dados reais |
 
 ---
 
@@ -157,10 +171,12 @@ Overrides via linha de comando (ex: `--epochs 5 --lr 1e-3`) sobrescrevem os valo
 
 ## 📄 Arquivos de Saída
 
-Todas as figuras e artefatos gerados pelo PA1 são salvos diretamente em `pa1/outputs/`:
+Todas as figuras e artefatos gerados pelo PA1 são salvos diretamente em `outputs/` (raiz do projeto):
 
-- `pa1/outputs/synthetic_samples.png`: Grid com imagens e instâncias do dataset sintético.
-- `pa1/outputs/parte0_resultados.png`: Gráficos de perda, IoU/Dice semânticos e dispersão `mAP vs. Densidade de Objetos`.
-- `pa1/outputs/parte0_qualitativo.png`: Grid 4×N comparando Imagem Original, GT de Instâncias, Predições e Máscara Binária.
+- `outputs/synthetic_samples.png`: Grid com imagens e instâncias do dataset sintético (apenas Parte 0).
+- `outputs/parte0_resultados.png`: Gráficos de perda, IoU/Dice semânticos e dispersão `mAP vs. Densidade de Objetos` (apenas Parte 0).
+- `outputs/parte0_qualitativo.png`: Grid 4×N comparando Imagem Original, GT de Instâncias, Predições e Máscara Binária (Parte 0).
+- `outputs/parte1_resultados.png`: Mesmo formato do `parte0_resultados.png`, sobre dados reais DSB2018 (apenas Parte 1).
+- `outputs/parte1_qualitativo.png`: Mesmo formato do `parte0_qualitativo.png`, sobre dados reais DSB2018 (apenas Parte 1).
 
-> **Regra de histórico:** Se uma imagem com o mesmo nome já existir na raiz de `pa1/outputs/`, ela é substituída pela mais recente. Caso deseje arquivar execuções anteriores, crie subpastas dentro de `pa1/outputs/` (ex: `pa1/outputs/historico/`); o pipeline não mexe nem lê arquivos dentro de subpastas.
+> **Regra de histórico:** Se uma imagem com o mesmo nome já existir na raiz de `outputs/`, ela é substituída pela mais recente. Caso deseje arquivar execuções anteriores, crie subpastas dentro de `outputs/` (ex: `outputs/historico/`); o pipeline não mexe nem lê arquivos dentro de subpastas.

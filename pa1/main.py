@@ -125,24 +125,28 @@ def evaluate(
             ious.append(iou)
             dices.append(dice)
 
-            # Coleta amostras para o grid qualitativo
-            if len(qualitative_samples) < max_qualitative_samples:
-                raw_img = images[i].cpu().numpy()
-                if raw_img.ndim == 3 and raw_img.shape[0] == 3:
-                    mean = np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
-                    std = np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
-                    disp_img = np.clip((raw_img * std + mean).transpose(1, 2, 0), 0, 1)
-                else:
-                    disp_img = raw_img[0] if raw_img.ndim == 3 else raw_img
+            # Coleta amostras para o grid qualitativo (todas, depois escolhemos as piores)
+            raw_img = images[i].cpu().numpy()
+            if raw_img.ndim == 3 and raw_img.shape[0] == 3:
+                mean = np.array([0.485, 0.456, 0.406]).reshape(3, 1, 1)
+                std = np.array([0.229, 0.224, 0.225]).reshape(3, 1, 1)
+                disp_img = np.clip((raw_img * std + mean).transpose(1, 2, 0), 0, 1)
+            else:
+                disp_img = raw_img[0] if raw_img.ndim == 3 else raw_img
 
-                qualitative_samples.append({
-                    "image": disp_img,
-                    "gt_instances": gt_inst,
-                    "pred_instances": pred_inst,
-                    "gt_binary": gt_sem.astype(np.uint8),
-                    "mAP": result["mAP"],
-                    "idx": len(qualitative_samples) + 1,
-                })
+            qualitative_samples.append({
+                "image": disp_img,
+                "gt_instances": gt_inst,
+                "pred_instances": pred_inst,
+                "gt_binary": gt_sem.astype(np.uint8),
+                "mAP": result["mAP"],
+                "idx": len(qualitative_samples) + 1,
+            })
+
+    # Seleciona as N amostras com menor mAP para o grid qualitativo (as piores)
+    n_show = min(max_qualitative_samples, len(qualitative_samples))
+    qualitative_samples.sort(key=lambda s: s["mAP"])
+    qualitative_samples = qualitative_samples[:n_show]
 
     return {
         "mean_mAP": float(np.mean(maps)) if maps else 0.0,
@@ -235,6 +239,8 @@ def main() -> None:
     output_path = Path(cfg.output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
+    mode_tag = "parte0" if cfg.data.synthetic else "parte1"
+
     # ---- Dados ----
     in_channels = cfg.model.in_channels
 
@@ -268,10 +274,6 @@ def main() -> None:
             seed=cfg.seed,
         )
         in_channels = 3  # Imagens RGB do DSB2018
-
-        samples_fig = output_path / "synthetic_samples.png"
-        saved_samples_path = plot_synthetic_samples(train_loader.dataset, samples_fig)
-        print(f"Amostras do dataset salvas em: {saved_samples_path}")
 
     else:
         raise ValueError("Defina `synthetic: true` ou passe um `data_dir` na configuração.")
@@ -350,7 +352,8 @@ def main() -> None:
         history["val_dice"] = [final_metrics["mean_dice"]]
 
     # 1. Salva curvas de treino + mAP vs. Densidade diretamente em outputs/
-    results_fig = output_path / "parte0_resultados.png"
+    mode_tag = "parte0" if cfg.data.synthetic else "parte1"
+    results_fig = output_path / f"{mode_tag}_resultados.png"
     saved_results_path = plot_training_results(
         history=history,
         density_list=final_metrics["densities"],
@@ -360,7 +363,7 @@ def main() -> None:
     print(f"Gráficos de resultados e densidade salvos em: {saved_results_path}")
 
     # 2. Salva grid qualitativo 4x4 diretamente em outputs/
-    qualitative_fig = output_path / "parte0_qualitativo.png"
+    qualitative_fig = output_path / f"{mode_tag}_qualitativo.png"
     saved_qualitative_path = plot_qualitative_results(
         samples=final_metrics["samples"],
         save_path=qualitative_fig,
