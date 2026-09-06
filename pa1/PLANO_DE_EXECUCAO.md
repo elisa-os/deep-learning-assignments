@@ -112,7 +112,7 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 
 ---
 
-### Passo 3: Decodificadores de Instância e Métrica mAP@[0.5:0.95] — `[🟡 Parcialmente Implementado]`
+### Passo 3: Decodificadores de Instância e Métrica mAP@[0.5:0.95] — `[✅ Concluído]`
 *Objetivo: Implementar o cálculo formal da métrica de avaliação e as duas estratégias de pós-processamento.*
 
 - **O que fazer:**

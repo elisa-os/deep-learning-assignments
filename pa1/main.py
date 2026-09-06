@@ -243,9 +243,12 @@ def main() -> None:
 
     # ---- Dados ----
     in_channels = cfg.model.in_channels
+    mode_tag = "parte0" if cfg.data.synthetic else "parte1"
+    test_loader = None  # inicializa para uso seguro no bloco de avaliação
 
     if cfg.data.synthetic:
         print("[Modo Sintético] Gerando dataset de elipses...")
+        in_channels = 1  # escala de cinza (sintético)
         train_loader = make_synthetic_loader(
             n_samples=cfg.data.n_samples,
             batch_size=cfg.data.batch_size,
@@ -345,6 +348,48 @@ def main() -> None:
     print(f"mAP@[0.50:0.95]: {final_metrics['mean_mAP']:.4f}")
     print(f"Erro de contagem médio: {final_metrics['mean_count_error']:.2f}")
 
+    # ---- Avaliação no conjunto de TESTE ----
+    if test_loader is not None:
+        print("\n=== Avaliação no Teste ===")
+        test_metrics = evaluate(model, test_loader, device, max_qualitative_samples=0)
+        print(f"IoU Semântico Médio (test): {test_metrics['mean_iou']:.4f}")
+        print(f"Dice Semântico Médio (test): {test_metrics['mean_dice']:.4f}")
+        print(f"mAP@[0.50:0.95] (test): {test_metrics['mean_mAP']:.4f}")
+        print(f"Erro de contagem médio (test): {test_metrics['mean_count_error']:.2f}")
+    else:
+        test_metrics = None
+        print("\n(skip: sem conjunto de teste disponível)")
+
+    # ---- Salvar checkpoint ----
+    baseline_dir = output_path / "baseline"
+    baseline_dir.mkdir(parents=True, exist_ok=True)
+    ckpt_path = baseline_dir / "baseline_unet.pt"
+    torch.save(model.state_dict(), ckpt_path)
+    print(f"\nCheckpoint salvo em: {ckpt_path}")
+
+    # ---- Salvar métricas em JSON para registro ----
+    import json
+    metrics_record = {
+        "val": {
+            "iou": final_metrics["mean_iou"],
+            "dice": final_metrics["mean_dice"],
+            "mAP": final_metrics["mean_mAP"],
+            "count_error": final_metrics["mean_count_error"],
+        },
+        "test": None,
+    }
+    if test_metrics:
+        metrics_record["test"] = {
+            "iou": test_metrics["mean_iou"],
+            "dice": test_metrics["mean_dice"],
+            "mAP": test_metrics["mean_mAP"],
+            "count_error": test_metrics["mean_count_error"],
+        }
+    metrics_json = baseline_dir / "baseline_results.json"
+    with open(metrics_json, "w") as f:
+        json.dump(metrics_record, f, indent=2)
+    print(f"Métricas salvas em: {metrics_json}")
+
     # Se não rodou treino completo (ex: eval-only), preenche loss fictícia para o plot
     if not history["train_loss"]:
         history["train_loss"] = [0.0]
@@ -352,7 +397,6 @@ def main() -> None:
         history["val_dice"] = [final_metrics["mean_dice"]]
 
     # 1. Salva curvas de treino + mAP vs. Densidade diretamente em outputs/
-    mode_tag = "parte0" if cfg.data.synthetic else "parte1"
     results_fig = output_path / f"{mode_tag}_resultados.png"
     saved_results_path = plot_training_results(
         history=history,

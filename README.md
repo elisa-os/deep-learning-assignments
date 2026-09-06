@@ -80,13 +80,13 @@ uv run pa1 --synthetic --epochs 10     # default no YAML: 20; ajuste conforme ne
 uv run pa1 --synthetic --epochs 5 --batch-size 16 --lr 1e-3
 
 # 4. Avaliação só (sem retreinar) a partir de checkpoint:
-uv run pa1 --synthetic --eval-only --checkpoint outputs/parte0_checkpoint.pt
+uv run pa1 --synthetic --eval-only --checkpoint pa1/outputs/parte0_checkpoint.pt
 ```
 
-**Saídas (em `outputs/`):**
-- `outputs/synthetic_samples.png` — grid 2×4 com imagens + máscara de instâncias sintéticas
-- `outputs/parte0_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
-- `outputs/parte0_qualitativo.png` — grid 4×4 comparativo (imagem / GT / predição / binário)
+**Saídas (em `pa1/outputs/`):**
+- `pa1/outputs/synthetic_samples.png` — grid 2×4 com imagens + máscara de instâncias sintéticas
+- `pa1/outputs/parte0_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
+- `pa1/outputs/parte0_qualitativo.png` — grid 4×4 comparativo (imagem / GT / predição / binário)
 
 ### Parte 1 — Baseline com dados reais (DSB2018)
 
@@ -104,15 +104,15 @@ uv run pa1 --no-synthetic --epochs 20   # default no YAML: 20; ajuste conforme n
 # 3. Execução rápida de teste (reduz epochs e batch):
 uv run pa1 --no-synthetic --epochs 5 --batch-size 4 --lr 1e-3
 
-# 4. Avaliação só (sem retreinar) a partir de checkpoint salvo:
-uv run pa1 --no-synthetic --eval-only --checkpoint outputs/parte1_checkpoint.pt
+# 4. Avaliação só (sem retreinar) a partir de checkpoint:
+uv run pa1 --no-synthetic --eval-only --checkpoint pa1/outputs/parte1_checkpoint.pt
 ```
 
 > **Dica de epochs:** o YAML `pa1/config.yaml` define o número de epochs usado quando nenhuma flag `--epochs` é passada. Para rodar com um número específico, passe `--epochs N` na linha de comando (ex: `--epochs 20`). Ambos os modos aceitam a mesma flag.
 
-**Saídas (em `outputs/`):**
-- `outputs/parte1_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
-- `outputs/parte1_qualitativo.png` — grid 4×4 comparativo sobre dados reais (imagem / GT / predição / binário)
+**Saídas (em `pa1/outputs/`):**
+- `pa1/outputs/parte1_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
+- `pa1/outputs/parte1_qualitativo.png` — grid 4×4 comparativo sobre dados reais (imagem / GT / predição / binário)
 
 ## 📦 Saídas do Pipeline
 
