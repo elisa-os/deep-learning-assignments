@@ -18,13 +18,42 @@ dependencies = [
     "scikit-image>=0.26.0",
     "scikit-learn>=1.9.0",
     "scipy>=1.0",
-    "torch>=2.14.0",
+    "torch>=2.6.0",
 ]
 
 [project.scripts]
 pa1 = "pa1.main:main"
 
+# ─── PyTorch cu118 ────────────────────────────────────────────────────────────
+# torch>=2.6.0+cu118 é a última release compilada com CUDA 11.8, que inclui
+# kernels para GPUs Pascal (sm_61, ex.: GTX 1080 Ti, GTX 1070, P100).
+# A partir do torch 2.7 o índice cu118 foi descontinuado; as builds padrão
+# (cu130) suportam apenas sm_75+ (Turing/Ampere/Hopper), deixando GPUs Pascal
+# sem suporte nativo.
+#
+# Impacto nos colaboradores:
+#   • GPU NVIDIA sm_61 (Pascal, ex.: GTX 1080 Ti): usa CUDA normalmente ✓
+#   • GPU NVIDIA sm_75+ (Turing+): usa CUDA normalmente ✓
+#   • Sem GPU / CPU-only (Intel integrado): torch funciona em CPU normalmente ✓
+#     (o cu118 wheel inclui CPU kernels; a build cu118 ≈ 850 MB vs ≈ 750 MB CPU-only)
+#
+# Nota sobre NCCL (comunicação multi-GPU):
+#   O torch 2.6+cu118 foi compilado contra NCCL 2.22+ cujos wheels PyPI para cu11
+#   disponibilizam apenas até 2.21.5.  Em treinamento single-GPU (único no projeto),
+#   o NCCL nunca é chamado em tempo de execução — mas o libtorch_cuda.so carregado
+#   em import-time busca os símbolos novos.  O workaround é carregar o stub antes:
+#
+#     LD_PRELOAD=.venv/lib/python3.11/site-packages/pa1/nccl_stub.so uv run pa1
+#
+#   O stub é gerado automaticamente pelo script scripts/build_nccl_stub.sh e
+#   copiado para .venv/...  no pós-install (ver [tool.uv.scripts] abaixo).
 [tool.uv.sources]
+torch = { index = "pytorch-cu118" }
+
+[[tool.uv.index]]
+name = "pytorch-cu118"
+url = "https://download.pytorch.org/whl/cu118"
+explicit = true
 
 [build-system]
 requires = ["uv_build>=0.12.3,<0.13.0"]
