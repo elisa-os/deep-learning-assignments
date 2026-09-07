@@ -14,11 +14,6 @@ build/
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# Datasets brutos pesados (manter apenas scripts de download/geração)
-**/stage1_train/
-**/data/raw/
-**/data/processed/
-
 # OS
 .DS_Store
 Thumbs.db
