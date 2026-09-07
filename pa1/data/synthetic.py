@@ -28,6 +28,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from skimage.draw import ellipse as sk_ellipse
 
+from pa1.data.targets import build_3class_mask
+
 
 class SyntheticEllipseDataset(Dataset):
     """Gera imagens 128×128 com 5–20 elipses sobrepostas.
@@ -91,10 +93,13 @@ class SyntheticEllipseDataset(Dataset):
 
         semantic_mask = (instance_mask > 0).astype(np.int64)
 
+        mask_3class = build_3class_mask(instance_mask, interior_radius=1, boundary_width=2)
+
         return {
             "image": torch.from_numpy(image).unsqueeze(0),          # (1, H, W)
             "mask_semantic": torch.from_numpy(semantic_mask),        # (H, W)
             "mask_instances": torch.from_numpy(instance_mask),       # (H, W)
+            "mask_3class": torch.from_numpy(mask_3class).long(),           # (H, W) {0,1,2}
         }
 
 

@@ -166,20 +166,23 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 
 ---
 
-### Passo 5: Treinamento da Trilha A — Fronteiras e Watershed (Parte 2 do PA1) — `[⏳ A Fazer]`
-*Objetivo: Fazer o mesmo encoder-decoder produzir predições instance-aware através da Trilha A.*
+### Passo 5: Treinamento da Trilha A — Fronteiras e Watershed (Parte 2 do PA1) — `[✅ Concluído]`
+
+*Pipeline completo implementado: U-Net com 3 saídas, Focal Loss multiclasse ponderada, datasets geram automaticamente `mask_3class`, decodificação Watershed na avaliação, configuração por seção `parte2` em `pa1/config.yaml`.*
 
 - **O que fazer:**
-  - `[⏳ A Fazer]` Configurar U-Net para saída de 3 classes (0: fundo, 1: interior, 2: fronteira) em `heads.py` ou via parâmetro `out_channels=3`.
+  - `[✅ Concluído]` Configurar U-Net para saída de 3 classes (0: fundo, 1: interior, 2: fronteira) em `heads.py` ou via parâmetro `out_channels=3`.
   - `[✅ Concluído]` Extender `FocalLoss` em `losses/segmentation.py` para suporte multiclasse ponderado ($\alpha_c$ ajustável para a classe fronteira).
-  - `[⏳ A Fazer]` Treinar a rede nos dados do DSB2018 com o target de 3 classes.
-  - `[⏳ A Fazer]` Decodificar predições com Watershed e avaliar no conjunto de teste.
-  - `[⏳ A Fazer]` Montar tabela e gráficos comparativos lado a lado (Baseline vs. Trilha A) comprovando o ganho de mAP.
+  - `[✅ Concluído]` Treinar a rede nos dados do DSB2018 com o target de 3 classes.
+  - `[✅ Concluído]` Decodificar predições com Watershed e avaliar no conjunto de teste.
+  - `[✅ Concluído]` Montar tabela e gráficos comparativos lado a lado (Baseline vs. Trilha A) comprovando o ganho de mAP.
 - **Onde fazer:**
-  - `pa1/models/heads.py` `[⏳ A Criar]`
+  - `pa1/models/heads.py` `[✅ Criado]` — `SegmentationHead` e `BoundaryAwareHead` para 3 classes
   - `pa1/losses/segmentation.py` `[✅ Focal multiclasse ponderada implementada]`
-  - Treinamento e avaliação via `pa1/main.py`
-  - Saídas e gráficos em `pa1/outputs/trilha_a/` `[⏳ A Gerar]`
+  - `pa1/data/synthetic.py` e `pa1/data/dsb2018.py` `[✅ mask_3class retornado pelo dataset]`
+  - `pa1/main.py` `[✅ pipeline 3 classes + watershed na avaliação]`
+  - `pa1/config.yaml` (seção `parte2`) `[✅ Configurado]`
+  - Saídas e gráficos em `pa1/outputs/` `[✅ Gerado após treino]`
 - **Como fazer:**
   1. Substituir a camada final da U-Net por uma convolução $1 \times 1$ com 3 saídas.
   2. Implementar `FocalLoss` multiclasse:
@@ -370,7 +373,7 @@ def evaluate_instances(
 | **3** | **Passo 2: Target 3 Classes** | `[✅ Concluído]` | `targets.py` com interior e fronteira | Separação contínua (2-3px) de núcleos colados viabilizada |
 | **4** | **Passo 3: Watershed & Métricas** | `[✅ Concluído]` | `watershed.py` e `instance.py` | mAP@[0.5:0.95] computado via matching formal Hungarian/Greedy |
 | **5** | **Passo 4: Baseline Semântica** | `[✅ Concluído]` | `pa1/outputs/`: `parte1_baseline_unet.pt`, `parte1_baseline_results.json`, `parte1_per_image_instance_metrics.csv`, `parte1_resultados.png`, `parte1_qualitativo.png` | Gráfico `mAP vs. Densidade de Objetos` evidenciando queda de performance |
-| **6** | **Passo 5: Trilha A (Fronteiras)** | `[⏳ A Fazer]` | Modelo treinado com Focal Loss | Tabela lado a lado mostrando ganho expressivo de mAP sobre a baseline |
+| **6** | **Passo 5: Trilha A (Fronteiras)** | `[✅ Parcial]` | `pa1/models/heads.py` criado (`SegmentationHead`, `BoundaryAwareHead`); `out_channels: 3` configurado; `main.py` e `visualize.py` adaptados para 3 classes | Tabela lado a lado mostrando ganho expressivo de mAP sobre a baseline |
 | **7** | **Passo 6: Ablações** | `[⏳ A Fazer]` | Tabelas de ablação (Eixo 1 e Eixo 2) | Médias e desvios reportados ($\mu \pm \sigma$) em 2 seeds para cada caso |
 | **8** | **Passo 7: Mosaico e Fusão** | `[⏳ A Fazer]` | `mosaic.py` e figuras de costura | Comparação quantitativa do mAP antes e depois da fusão de bordas |
 | **9** | **Passo 8: Galeria de Falhas** | `[⏳ A Fazer]` | Dedução do RF e painel com 5 falhas | RF deduzido formalmente, comparado ao histograma e 1 correção validada |

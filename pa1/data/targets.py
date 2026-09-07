@@ -14,8 +14,7 @@ from __future__ import annotations
 from typing import Optional
 import numpy as np
 from scipy import ndimage
-from skimage.morphology import disk
-from skimage.morphology.binary import binary_erosion, binary_dilation
+from skimage.morphology import disk, erosion, dilation
 
 
 def build_3class_mask(
@@ -45,7 +44,7 @@ def build_3class_mask(
         single = (instance_mask == iid).astype(np.uint8)
         if interior_radius > 0:
             k = disk(interior_radius)
-            er = binary_erosion(single, k).astype(np.uint8)
+            er = erosion(single, k).astype(np.uint8)
         else:
             er = single
         interior[er > 0] = 1
@@ -53,7 +52,7 @@ def build_3class_mask(
     # --- Fronteira: região entre o foreground dilatado e o interior ---
     if boundary_width > 0:
         k = disk(boundary_width)
-        fg_dilated = binary_dilation(sem, k).astype(np.uint8)
+        fg_dilated = dilation(sem, k).astype(np.uint8)
     else:
         fg_dilated = sem
     boundary = (fg_dilated > 0) & (interior == 0)

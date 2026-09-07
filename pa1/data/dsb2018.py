@@ -38,6 +38,8 @@ from PIL import Image
 import torch
 from torch.utils.data import Dataset, DataLoader
 
+from pa1.data.targets import build_3class_mask
+
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Detecção de Modalidade
@@ -283,10 +285,17 @@ class DSB2018Dataset(Dataset):
             sem_tensor = torch.from_numpy(sem_mask).long()
             inst_tensor = torch.from_numpy(inst_mask).long()
 
+        # Build 3-class target from instance mask (0=fundo,1=interior,2=fronteira)
+        mask_3class = build_3class_mask(
+            inst_tensor.numpy(), interior_radius=1, boundary_width=2
+        )
+        mask_3class_tensor = torch.from_numpy(mask_3class).long()
+
         return {
             "image": img_tensor,
             "mask_semantic": sem_tensor,
             "mask_instances": inst_tensor,
+            "mask_3class": mask_3class_tensor,
         }
 
 

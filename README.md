@@ -64,24 +64,40 @@ Consulte o documento completo:
 
 ## 🚀 Como Rodar o PA1
 
-O Pipeline do PA1 é controlado pela flag `synthetic` em `pa1/config.yaml` (ou via CLI `--synthetic`/`--no-synthetic`). Os demais parâmetros (`data_dir`, `epochs`, `lr`, etc.) também podem ser sobrescritos diretamente na linha de comando.
+O pipeline do PA1 usa um **argumento posicional de parte** (`0`, `1`, `2`, ...) que seleciona automaticamente a seção correspondente em `pa1/config.yaml` (`parte0`, `parte1`, `parte2`, ...). Isso substitui o uso de `--synthetic`/`--no-synthetic`: agora você roda pela parte e cada parte já vem com sua configuração pré-definida (dados sintéticos ou reais, arquitetura, loss, epochs, etc.).
+
+Formas aceitas no CLI:
+```bash
+uv run pa1 0          # parte0 (sintético)
+uv run pa1 1          # parte1 (baseline DSB2018)
+uv run pa1 2          # parte2 (Trilha A 3 classes)
+uv run pa1 parte 2    # equivalente a "2"
+uv run pa1 parte2     # equivalente a "2"
+uv run pa1 parte2_baseline  # também equivalente a "2" (extrai o número)
+```
+
+Overrides pontuais ainda funcionam:
+```bash
+uv run pa1 0 --epochs 10 --lr 1e-4   # sobrescreve epochs/lr da parte0
+uv run pa1 2 --eval-only --checkpoint outputs/trilhaA_baseline_unet.pt  # avalia só
+```
 
 ### Parte 0 — Teste unitário sintético (elipses)
 
 Treina com dataset sintético de elipses e gera os gráficos + grid qualitativo. Roda em poucos minutos.
 
 ```bash
-# 1. Com configuração padrão (YAML): configura epochs, lr, batch_size no config.yaml
-uv run pa1 --synthetic
+# Treino completo com configuração da parte0:
+uv run pa1 0
 
-# 2. Sobrescrevendo epochs explicitamente na linha de comando:
-uv run pa1 --synthetic --epochs 10     # default no YAML: 20; ajuste conforme necessidade
+# Sobrescrevendo epochs:
+uv run pa1 0 --epochs 10
 
-# 3. Teste rápido com menos épocas e batch pequeno:
-uv run pa1 --synthetic --epochs 5 --batch-size 16 --lr 1e-3
+# Teste rápido:
+uv run pa1 0 --epochs 5 --batch-size 16 --lr 1e-3
 
-# 4. Avaliação só (sem retreinar) a partir de checkpoint:
-uv run pa1 --synthetic --eval-only --checkpoint pa1/outputs/parte0_checkpoint.pt
+# Avaliação só:
+uv run pa1 0 --eval-only --checkpoint pa1/outputs/parte0_baseline_unet.pt
 ```
 
 **Saídas (em `pa1/outputs/`):**
@@ -96,20 +112,20 @@ Treina U-Net binária sobre microscopia de núcleos e reporta IoU/Dice + mAP de 
 **Pré-requisito:** o diretório `pa1/data/stage1_train/` com as imagens e máscaras do DSB2018 deve existir (baixe e extraia conforme o enunciado do PA1).
 
 ```bash
-# 1. Treino completo com configuração padrão (YAML):
-uv run pa1 --no-synthetic
+# Treino completo com configuração da parte1:
+uv run pa1 1
 
-# 2. Sobrescrevendo epochs explicitamente:
-uv run pa1 --no-synthetic --epochs 20   # default no YAML: 20; ajuste conforme necessidade
+# Sobrescrevendo epochs:
+uv run pa1 1 --epochs 20
 
-# 3. Execução rápida de teste (reduz epochs e batch):
-uv run pa1 --no-synthetic --epochs 5 --batch-size 4 --lr 1e-3
+# Execução rápida de teste:
+uv run pa1 1 --epochs 5 --batch-size 4 --lr 1e-3
 
-# 4. Avaliação só (sem retreinar) a partir de checkpoint:
-uv run pa1 --no-synthetic --eval-only --checkpoint pa1/outputs/parte1_baseline_unet.pt
+# Avaliação só:
+uv run pa1 1 --eval-only --checkpoint pa1/outputs/parte1_baseline_unet.pt
 ```
 
-> **Dica de epochs:** o YAML `pa1/config.yaml` define o número de epochs usado quando nenhuma flag `--epochs` é passada. Para rodar com um número específico, passe `--epochs N` na linha de comando (ex: `--epochs 20`). Ambos os modos aceitam a mesma flag.
+> **Dica de epochs:** o YAML `pa1/config.yaml` na seção `parte1` define o número de epochs usado quando nenhuma flag `--epochs` é passada. Use `--epochs N` para sobrescrever.
 
 **Saídas (em `pa1/outputs/`):**
 - `pa1/outputs/parte1_baseline_unet.pt` — pesos do modelo treinado (checkpoint)
@@ -117,6 +133,35 @@ uv run pa1 --no-synthetic --eval-only --checkpoint pa1/outputs/parte1_baseline_u
 - `pa1/outputs/parte1_per_image_instance_metrics.csv` — métricas completas por imagem (ver abaixo)
 - `pa1/outputs/parte1_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
 - `pa1/outputs/parte1_qualitativo.png` — grid 4×4 comparativo sobre dados reais (imagem / GT / predição / binário)
+
+### Parte 2 — Trilha A: Fronteiras + Watershed (3 classes)
+
+Treina a mesma U-Net com saída de 3 classes (fundo / interior / fronteira), Focal Loss multiclasse ponderada e decodifica instâncias com Watershed.
+
+**Pré-requisito:** o diretório `pa1/data/stage1_train/` com as imagens e máscaras do DSB2018 deve existir.
+
+```bash
+# Treino completo da Trilha A (3 classes + FocalLoss + Watershed):
+uv run pa1 2
+
+# Sobrescrevendo epochs:
+uv run pa1 2 --epochs 30
+
+# Teste rápido:
+uv run pa1 2 --epochs 5 --batch-size 4 --lr 1e-3
+
+# Avaliação só:
+uv run pa1 2 --eval-only --checkpoint pa1/outputs/trilhaA_baseline_unet.pt
+```
+
+> **Dica de epochs:** a Trilha A geralmente precisa de mais épocas que a baseline binária (20-40) para a fronteira convergir.
+
+**Saídas (em `pa1/outputs/`):**
+- `pa1/outputs/trilhaA_baseline_unet.pt` — pesos do modelo treinado com 3 classes
+- `pa1/outputs/trilhaA_baseline_results.json` — resumo JSON com métricas médias
+- `pa1/outputs/trilhaA_per_image_instance_metrics.csv` — métricas por imagem (Watershed)
+- `pa1/outputs/trilhaA_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
+- `pa1/outputs/trilhaA_qualitativo.png` — grid 4×4 comparativo com decodificação Watershed
 
 ---
 
@@ -134,13 +179,23 @@ Todas as figuras e artefatos são salvos diretamente em `pa1/outputs/`. Se o arq
 
 ### Parte 1 — Baseline (DSB2018)
 
-| Arquivo | Quando é gerado | Descrição |
-|---------|-----------------|-----------|
-| `outputs/parte1_baseline_unet.pt` | Parte 1 (treino ou eval-only) | Pesos do modelo final (checkpoint) |
-| `outputs/parte1_baseline_results.json` | Parte 1 (final da avaliação) | Métricas médias de validação e teste: IoU, Dice, mAP, erro de contagem |
-| `outputs/parte1_per_image_instance_metrics.csv` | Parte 1 (final da avaliação) | Métricas completas por imagem (ver seção abaixo) |
-| `outputs/parte1_resultados.png` | Parte 1 (DSB2018) | Mesmo formato do parte0_resultados.png, mas sobre dados reais |
-| `outputs/parte1_qualitativo.png` | Parte 1 (DSB2018) | Mesmo formato do parte0_qualitativo.png, mas sobre dados reais |
+|| Arquivo | Quando é gerado | Descrição |
+||---------|-----------------|-----------|
+|| `outputs/parte1_baseline_unet.pt` | Parte 1 (treino ou eval-only) | Pesos do modelo final (checkpoint) |
+|| `outputs/parte1_baseline_results.json` | Parte 1 (final da avaliação) | Métricas médias de validação e teste: IoU, Dice, mAP, erro de contagem |
+|| `outputs/parte1_per_image_instance_metrics.csv` | Parte 1 (final da avaliação) | Métricas completas por imagem (ver seção abaixo) |
+|| `outputs/parte1_resultados.png` | Parte 1 (DSB2018) | Mesmo formato do parte0_resultados.png, mas sobre dados reais |
+|| `outputs/parte1_qualitativo.png` | Parte 1 (DSB2018) | Mesmo formato do parte0_qualitativo.png, mas sobre dados reais |
+
+### Parte 2 — Trilha A (Fronteiras + Watershed)
+
+|| Arquivo | Quando é gerado | Descrição |
+||---------|-----------------|-----------|
+|| `outputs/trilhaA_baseline_unet.pt` | Parte 2 (treino ou eval-only) | Pesos do modelo final com 3 classes (checkpoint) |
+|| `outputs/trilhaA_baseline_results.json` | Parte 2 (final da avaliação) | Métricas médias de validação e teste: IoU, Dice, mAP, erro de contagem |
+|| `outputs/trilhaA_per_image_instance_metrics.csv` | Parte 2 (final da avaliação) | Métricas completas por imagem — decodificação Watershed |
+|| `outputs/trilhaA_resultados.png` | Parte 2 (DSB2018) | Mesmo formato do parte1_resultados.png, mas para 3 classes |
+|| `outputs/trilhaA_qualitativo.png` | Parte 2 (DSB2018) | Grid 4×4 com decodificação Watershed sobre dados reais |
 
 ---
 

@@ -62,31 +62,57 @@ train:
   checkpoint: null           # caminho opcional para checkpoint de início
 ```
 
-## Comandos
+### Comandos
 
-### Treino completo (com DSB2018)
+O pipeline do PA1 usa um **argumento posicional de parte** que seleciona automaticamente a seção correspondente em `pa1/config.yaml`:
 
 ```bash
-uv run pa1 --config pa1/config.yaml
+uv run pa1 0          # Parte 0 — sintético (elipses)
+uv run pa1 1          # Parte 1 — baseline binária (DSB2018)
+uv run pa1 2          # Parte 2 — Trilha A (3 classes + Watershed)
+uv run pa1 parte 2    # equivalente a "2"
+uv run pa1 parte2     # equivalente a "2"
+uv run pa1 parte2_baseline  # equivalente a "2"
 ```
 
-### Modo sintético (Parte 0 — teste unitário)
+#### Parte 0 — Teste unitário sintético
 
 ```bash
-uv run pa1 --config pa1/config.yaml --synthetic
+uv run pa1 0                     # treino completo com config da parte0
+uv run pa1 0 --epochs 10         # sobrescreve epochs
+uv run pa1 0 --epochs 5 --batch-size 16 --lr 1e-3  # teste rápido
+uv run pa1 0 --eval-only --checkpoint outputs/parte0_baseline_unet.pt  # avalia só
 ```
 
-### Override pontual
+#### Parte 1 — Baseline binária (DSB2018)
 
 ```bash
-uv run pa1 --epochs 5 --lr 1e-4
-uv run pa1 --data-dir /caminho/para/dados
-uv run pa1 --eval-only --checkpoint outputs/parte1_baseline_unet.pt
+uv run pa1 1                     # treino completo
+uv run pa1 1 --epochs 20         # sobrescreve epochs
+uv run pa1 1 --epochs 5 --batch-size 4 --lr 1e-3   # teste rápido
+uv run pa1 1 --eval-only --checkpoint outputs/parte1_baseline_unet.pt  # avalia só
 ```
 
-### Ajuda
+> **Pré-requisito:** o diretório `pa1/data/stage1_train/` deve existir.
+
+#### Parte 2 — Trilha A (3 classes + Watershed)
 
 ```bash
+uv run pa1 2                     # treino completo (30 epochs por padrão)
+uv run pa1 2 --epochs 30         # sobrescreve epochs
+uv run pa1 2 --epochs 5 --batch-size 4 --lr 1e-3   # teste rápido
+uv run pa1 2 --eval-only --checkpoint outputs/trilhaA_baseline_unet.pt  # avalia só
+```
+
+> **Pré-requisito:** o diretório `pa1/data/stage1_train/` deve existir.
+
+#### Override pontual
+
+Qualquer flag de override funciona com qualquer parte:
+
+```bash
+uv run pa1 0 --epochs 10 --lr 1e-4
+uv run pa1 2 --eval-only --checkpoint outputs/trilhaA_baseline_unet.pt
 uv run pa1 --help
 ```
 
@@ -94,13 +120,16 @@ uv run pa1 --help
 
 Todos na pasta `outputs/` (ou onde `output_dir` apontar):
 
-| Arquivo | Descrição |
+|| Arquivo | Descrição |
 |---------|-----------|
-| `parte1_baseline_unet.pt` | Pesos do modelo treinado (checkpoint) |
-| `parte1_baseline_results.json` | Métricas médias de validação e teste (IoU, Dice, mAP, erro de contagem) |
-| `parte1_per_image_instance_metrics.csv` | Métricas completas por imagem — veja abaixo |
-| `parte0_resultados.png` / `parte1_resultados.png` | Gráficos: loss, métricas semânticas, mAP vs. densidade |
-| `parte0_qualitativo.png` / `parte1_qualitativo.png` | Grid com as 4 piores imagens pelo mAP |
+| `parte1_baseline_unet.pt` | Pesos do modelo treinado — baseline binária (Parte 1) |
+| `parte1_baseline_results.json` | Métricas médias de validação e teste do baseline (IoU, Dice, mAP, erro de contagem) |
+| `parte1_per_image_instance_metrics.csv` | Métricas completas por imagem do baseline |
+| `trilhaA_baseline_unet.pt` | Pesos do modelo treinado com 3 classes (Parte 2 — Trilha A) |
+| `trilhaA_baseline_results.json` | Métricas médias de validação e teste da Trilha A (IoU, Dice, mAP, erro de contagem) |
+| `trilhaA_per_image_instance_metrics.csv` | Métricas completas por imagem da Trilha A (Watershed) |
+| `parte0_resultados.png` / `parte1_resultados.png` / `trilhaA_resultados.png` | Gráficos: loss, métricas semânticas, mAP vs. densidade |
+| `parte0_qualitativo.png` / `parte1_qualitativo.png` / `trilhaA_qualitativo.png` | Grid com as 4 piores imagens pelo mAP |
 | `synthetic_samples.png` | Amostras do dataset sintético (só em modo sintético) |
 
 ## Métricas por imagem (`parte1_per_image_instance_metrics.csv`)

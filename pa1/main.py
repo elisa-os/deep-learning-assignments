@@ -30,15 +30,15 @@ from pa1.utils import (
     PerImageMetricsWriter,
 )
 from pa1.data import make_synthetic_loader, make_dsb2018_loaders
-from pa1.models import UNet
-from pa1.losses import BCEDiceLoss
+from pa1.models import UNet, SegmentationHead, BoundaryAwareHead
+from pa1.losses import BCEDiceLoss, FocalLoss, MulticlassDiceLoss
 from pa1.metrics import compute_map
-from pa1.postprocessing import semantic_to_instances
-
+from pa1.postprocessing import semantic_to_instances, watershed_to_instances
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Métricas semânticas auxiliares
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def compute_semantic_metrics(pred_binary: np.ndarray, gt_binary: np.ndarray) -> tuple[float, float]:
     """Calcula IoU e Dice para segmentação semântica binária."""
@@ -55,6 +55,7 @@ def compute_semantic_metrics(pred_binary: np.ndarray, gt_binary: np.ndarray) -> 
 # Treino (loop padrão PyTorch)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def train_one_epoch(
     model: nn.Module,
     loader,
@@ -67,11 +68,18 @@ def train_one_epoch(
     total_loss = 0.0
     for batch in loader:
         images = batch["image"].to(device)
-        masks = batch["mask_semantic"].to(device)
+        logits = model(images)
+
+        # Choose target key based on number of output channels.
+        # out_channels == 2 : use mask_semantic (binário {0,1}).
+        # out_channels >= 3 : use mask_3class (0=fundo,1=interior,2=fronteira) quando disponível.
+        if logits.shape[1] >= 3 and "mask_3class" in batch:
+            targets = batch["mask_3class"].to(device)
+        else:
+            targets = batch["mask_semantic"].to(device)
 
         optimizer.zero_grad()
-        logits = model(images)
-        loss = criterion(logits, masks)
+        loss = criterion(logits, targets)
         loss.backward()
         optimizer.step()
 
@@ -127,18 +135,43 @@ def evaluate(
     for batch in loader:
         images = batch["image"].to(device)
         gt_instances = batch["mask_instances"].numpy()  # (B, H, W)
-        gt_semantics = batch["mask_semantic"].numpy()   # (B, H, W)
+        gt_semantics = batch["mask_semantic"].numpy()  # (B, H, W)
 
         logits = model(images)
-        probs = torch.softmax(logits, dim=1)[:, 1].cpu().numpy()  # (B, H, W)
+
+        # ---------- predição e decodificação ----------
+        prob_map: np.ndarray | None = None
+        if logits.shape[1] >= 3:
+            # 3 classes: decodificação via Watershed sobre canal Interior.
+            probs = torch.softmax(logits, dim=1)
+            prob_3class = probs.cpu().numpy()  # (B, 3, H, W)
+        else:
+            # binário: probabilidade do canal objeto + componentes conexos
+            prob_map = torch.softmax(logits, dim=1)[:, 1].cpu().numpy()
+            prob_3class = None
 
         for i in range(images.size(0)):
-            prob_map = probs[i]
-            pred_inst = semantic_to_instances(prob_map)
             gt_inst = gt_instances[i]
-            gt_sem = gt_semantics[i]
 
-            # Métrica de instância (mAP e contagem)
+            if prob_3class is not None:
+                pred_inst = watershed_to_instances(prob_3class[i])
+                pred_bin = prob_3class[i, 1] >= 0.5
+                prob_for_plot = prob_3class[i].copy()
+            else:
+                pred_inst = semantic_to_instances(prob_map[i])
+                pred_bin = prob_map[i] >= 0.5
+                prob_for_plot = prob_map[i].copy()
+
+            # GT semântico para IoU/Dice: congele o GT como foreground
+            # = interior OU fronteira (classes 1 e 2 nas 3_classes) vs
+            # fundo (classe 0).
+            if "mask_3class" in batch:
+                gt_sem = batch["mask_3class"].numpy()[i]
+                gt_sem_bin = (gt_sem >= 1).astype(np.uint8)  # interior ou fronteira
+            else:
+                gt_sem = gt_semantics[i]
+                gt_sem_bin = gt_sem  # já binário
+
             result = compute_map(pred_inst, gt_inst)
             maps.append(result["mAP"])
             count_errors.append(result["count_error"])
@@ -147,9 +180,8 @@ def evaluate(
             n_gt_objects = len(np.unique(gt_inst[gt_inst > 0]))
             densities.append(n_gt_objects)
 
-            # Métricas semânticas (IoU e Dice)
-            pred_bin = prob_map >= 0.5
-            iou, dice = compute_semantic_metrics(pred_bin, gt_sem)
+            # Métricas semânticas (IoU e Dice) — contra foreground interior+fronteira
+            iou, dice = compute_semantic_metrics(pred_bin, gt_sem_bin)
             ious.append(iou)
             dices.append(dice)
 
@@ -162,14 +194,22 @@ def evaluate(
             else:
                 disp_img = raw_img[0] if raw_img.ndim == 3 else raw_img
 
-            qualitative_samples.append({
-                "image": disp_img,
-                "gt_instances": gt_inst,
-                "pred_instances": pred_inst,
-                "gt_binary": gt_sem.astype(np.uint8),
-                "mAP": result["mAP"],
-                "idx": global_idx + 1,
-            })
+            # Coloração para grid qualitativo: classe Interior (1) em vermelho,
+            # Fronteira (2) em amarelo, sobre a imagem original.
+            gt_3class = batch["mask_3class"].numpy()[i] if "mask_3class" in batch else None
+
+            qualitative_samples.append(
+                {
+                    "image": disp_img,
+                    "gt_instances": gt_inst,
+                    "pred_instances": pred_inst,
+                    "gt_binary": gt_sem_bin,
+                    "gt_3class": gt_3class,
+                    "prob_map": prob_for_plot,
+                    "mAP": result["mAP"],
+                    "idx": global_idx + 1,
+                }
+            )
 
             # ── Métricas por imagem: escritor externo (se fornecido) ──────────────
             if metrics_writer is not None:
@@ -206,12 +246,21 @@ def evaluate(
 # Parsing de argumentos & merge com YAML
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def parse_args() -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="PA1 — Segmentação de Instâncias",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     default_cfg = "pa1/config.yaml" if Path("pa1/config.yaml").exists() else "config.yaml"
+    p.add_argument(
+        "parte",
+        type=str,
+        nargs="*",
+        default=None,
+        help="Parte do PA a executar (0, parte0, parte2, ... ou 'parte 2'). "
+             "Define a seção do config.yaml a usar.",
+    )
     p.add_argument(
         "--config",
         type=str,
@@ -233,6 +282,49 @@ def parse_args() -> argparse.Namespace:
     return p.parse_args()
 
 
+def _parse_parte_arg(parte_arg) -> str | None:
+    """Converte o argumento bruto do CLI (None, str ou list[str]) em
+    um valor de parte normalizado, ou None se não foi informado.
+
+    Exemplos:
+        None          → None
+        "0"           → "0"
+        "parte1"      → "1"
+        ["parte", "2"] → "2"
+        ["parte2"]     → "2"
+        "3_baseline"  → "3"
+    """
+    if parte_arg is None:
+        return None
+    if isinstance(parte_arg, list):
+        # "parte 2" → ["parte", "2"]; "parte2" → ["parte2"]
+        if len(parte_arg) == 1:
+            raw = parte_arg[0]
+        elif len(parte_arg) >= 2 and parte_arg[0] == "parte":
+            raw = parte_arg[1] if len(parte_arg) > 1 else None
+        else:
+            raw = parte_arg[0]
+    else:
+        raw = parte_arg
+
+    if raw is None:
+        return None
+    s = raw.strip()
+    if s.startswith("parte"):
+        num_part = s[len("parte"):]
+        digits = ""
+        for ch in num_part:
+            if ch.isdigit():
+                digits += ch
+            else:
+                break
+        if digits:
+            return digits
+    if s.isdigit():
+        return s
+    return None
+
+
 def build_config(args: argparse.Namespace) -> Config:
     config_path = Path(args.config)
     if not config_path.exists():
@@ -243,7 +335,8 @@ def build_config(args: argparse.Namespace) -> Config:
         else:
             raise FileNotFoundError(f"Arquivo de configuração não encontrado: {args.config}")
 
-    cfg = load_config(config_path)
+    parte_str = _parse_parte_arg(args.parte)
+    cfg = load_config(config_path, passo=parte_str)
 
     # Overrides opcionais
     if args.synthetic is not None:
@@ -265,12 +358,23 @@ def build_config(args: argparse.Namespace) -> Config:
     if args.seed is not None:
         cfg.seed = args.seed
 
+    # mode_tag: usado para nomear checkpoints e saídas.
+    # Se a parte foi informada via CLI, deriva de "parteN"; senão
+    # mantem o padrão do config (parte0).
+    if parte_str == "0":
+        cfg.mode_tag = "parte0"
+    elif parte_str == "1":
+        cfg.mode_tag = "parte1"
+    elif parte_str == "2":
+        cfg.mode_tag = "trilhaA"
+
     return cfg
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 def main() -> None:
     args = parse_args()
@@ -282,11 +386,11 @@ def main() -> None:
     output_path = Path(cfg.output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
-    mode_tag = "parte0" if cfg.data.synthetic else "parte1"
+    # mode_tag: usado para nomear checkpoints e saídas.
+    # build_config já define o valor correto baseado na parte informada.
+    mode_tag = cfg.mode_tag
 
     # ---- Dados ----
-    in_channels = cfg.model.in_channels
-    mode_tag = "parte0" if cfg.data.synthetic else "parte1"
     test_loader = None  # inicializa para uso seguro no bloco de avaliação
 
     if cfg.data.synthetic:
@@ -312,7 +416,6 @@ def main() -> None:
         print(f"Amostras do dataset salvas em: {saved_samples_path}")
 
     elif cfg.data.data_dir:
-        print(f"[Modo Real DSB2018] Carregando dataset a partir de {cfg.data.data_dir}...")
         train_loader, val_loader, test_loader = make_dsb2018_loaders(
             data_dir=cfg.data.data_dir,
             batch_size=cfg.data.batch_size,
@@ -330,7 +433,17 @@ def main() -> None:
         out_channels=cfg.model.out_channels,
     ).to(device)
 
-    criterion = BCEDiceLoss(bce_weight=0.5)
+    # ---- Loss ----
+    n_classes = cfg.model.out_channels
+    if n_classes >= 3:
+        # Trilha A: 3 classes (fundo/interior/fronteira)
+        # Focal Loss multiclasse com peso maior para a classe fronteira (2)
+        alpha_values = [1.0, 1.0, 2.5]  # frontier:boundary ratio
+        criterion = FocalLoss(alpha=alpha_values, gamma=2.0, reduction="mean")
+    else:
+        # Segmentação binária
+        criterion = BCEDiceLoss(bce_weight=0.5)
+
     optimizer = optim.Adam(model.parameters(), lr=cfg.train.lr)
 
     if cfg.train.checkpoint:
