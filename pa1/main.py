@@ -414,14 +414,14 @@ def main() -> None:
         print("\n(skip: sem conjunto de teste disponível)")
 
     # ---- Salvar checkpoint ----
-    ckpt_path = output_path / "parte1_baseline_unet.pt"
+    ckpt_path = output_path / f"{mode_tag}_baseline_unet.pt"
     ckpt_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), ckpt_path)
     print(f"\nCheckpoint salvo em: {ckpt_path}")
 
     # ---- Persistir CSV de métricas por imagem ----
     if metrics_writer.record_count > 0:
-        csv_path = metrics_writer.write("parte1_per_image_instance_metrics.csv")
+        csv_path = metrics_writer.write(f"{mode_tag}_per_image_instance_metrics.csv")
         print(f"Métricas por imagem salvas em: {csv_path}")
 
     # ---- Salvar métricas em JSON para registro ----
@@ -441,7 +441,7 @@ def main() -> None:
             "mAP": test_metrics["mean_mAP"],
             "count_error": test_metrics["mean_count_error"],
         }
-    metrics_json = output_path / "parte1_baseline_results.json"
+    metrics_json = output_path / f"{mode_tag}_baseline_results.json"
     with open(metrics_json, "w") as f:
         json.dump(metrics_record, f, indent=2)
     print(f"Métricas salvas em: {metrics_json}")

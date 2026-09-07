@@ -55,16 +55,18 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
   - `[✅ Concluído]` Gerar um conjunto de dados analítico rápido com máscaras de instância exatas (`SyntheticEllipseDataset` e `make_synthetic_loader`).
   - `[✅ Concluído]` Treinar uma U-Net pequena demonstrando convergência em menos de 5 minutos (loop funcional em `main.py`).
   - `[✅ Concluído]` Validar o pipeline de treino, cálculo de perda e métrica básica de instância (IoU, Dice, mAP e erro de contagem validados no terminal e nas células 0 a 19 de `pa1.ipynb`).
+  - `[✅ Concluído]` Gerar e salvar os artefatos de saída sintética em `pa1/outputs/`: `synthetic_samples.png`, `parte0_resultados.png`, `parte0_qualitativo.png`, `parte0_baseline_unet.pt`, `parte0_baseline_results.json`, `parte0_per_image_instance_metrics.csv`.
 - **Onde fazer:**
   - `pa1/data/synthetic.py` `[✅ Implementado]`
   - `pa1/models/unet.py` `[✅ Implementado]`
-  - `pa1/main.py` `[✅ Implementado]`
+  - `pa1/main.py` `[✅ Implementado — correção de naming: checkpoint, CSV e JSON agora usam mode_tag (parte0/parte1) em vez de "parte1" hardcoded]`
   - `pa1.ipynb` `[✅ Implementado (células 0-19)]`
 - **Como fazer:**
   1. Criar imagens $128 \times 128$ contendo entre 5 e 20 elipses aleatórias com sobreposição proposital, níveis variados de ruído e contraste.
   2. Retornar máscaras inteiras de instância $1 \dots N$ e máscara semântica binária.
   3. Executar treino de 5 a 10 épocas com batch size pequeno (ex: 8 ou 16) usando otimizador Adam.
   4. Registrar tempo de execução (< 5 min) e evolução da perda como teste de sanidade.
+  5. A figura `synthetic_samples.png` só é gerada quando `cfg.data.synthetic == True` (ou `--synthetic`). Com `synthetic: false` no config.yaml, o bloco não executa — usar `--synthetic` explicitamente para regenerá-la sem alterar o config padrão.
 
 ---
 
@@ -140,19 +142,19 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 
 ---
 
-### Passo 4: Baseline de Segmentação Semântica e Análise de Fracasso (Parte 1 do PA1) — `[🟡 Em Progresso]`
+### Passo 4: Baseline de Segmentação Semântica e Análise de Fracasso (Parte 1 do PA1) — `[✅ Concluído]`
 *Objetivo: Estabelecer o ponto de partida com segmentação binária e evidenciar a limitação fundamental da abordagem semântica.*
 
 - **O que fazer:**
   - `[✅ Concluído]` U-Net binária e função de perda `BCEDiceLoss` implementadas no código.
-  - `[⏳ Em Progresso]` Executar o treinamento da U-Net binária sobre o split de treino do DSB2018 até convergência.
-  - `[⏳ A Fazer]` Avaliar na validação e teste: reportar IoU e Dice semânticos, além de mAP@[0.5:0.95] e erro de contagem via componentes conexos.
-  - `[⏳ A Fazer]` Quantificação do fracasso: gerar o gráfico de dispersão com curva de tendência `mAP vs. Densidade de Objetos (núcleos por imagem)` demonstrando o colapso do método ingênuo quando há aglomeração.
+  - `[✅ Concluído]` Executar o treinamento da U-Net binária sobre o split de treino do DSB2018 até convergência.
+  - `[✅ Concluído]` Avaliar na validação e teste: reportar IoU e Dice semânticos, além de mAP@[0.5:0.95] e erro de contagem via componentes conexos.
+  - `[✅ Concluído]` Quantificação do fracasso: gerar o gráfico de dispersão com curva de tendência `mAP vs. Densidade de Objetos (núcleos por imagem)` demonstrando o colapso do método ingênuo quando há aglomeração.
 - **Onde fazer:**
   - `pa1/models/unet.py` `[✅ Pronto]`
   - `pa1/losses/segmentation.py` `[✅ Pronto — BCEDiceLoss implementada]`
   - `pa1/main.py` `[✅ Pronto — pipeline completo de treino/avaliação]`
-  - Resultados e gráficos salvos em `pa1/outputs/baseline/` `[⏳ A Gerar]`
+  - Saídas em `pa1/outputs/`: `parte1_baseline_unet.pt`, `parte1_baseline_results.json`, `parte1_per_image_instance_metrics.csv`, `parte1_resultados.png`, `parte1_qualitativo.png` `[✅ Gerado]`
 - **Como fazer:**
   1. Treinar a U-Net binária utilizando Cross-Entropy ou Dice Loss nos dados de treino do DSB2018.
   2. Avaliar no conjunto de validação reportando IoU e Dice semânticos.
@@ -367,7 +369,7 @@ def evaluate_instances(
 | **2** | **Passo 1: Dataset DSB2018** | `[✅ Concluído]` | `dsb2018.py` com split estratificado | Divisão 70/15/15 mantendo proporção exata das 3 modalidades (Fluorescência: 546, H&E: 105, Campo Claro: 19) |
 | **3** | **Passo 2: Target 3 Classes** | `[✅ Concluído]` | `targets.py` com interior e fronteira | Separação contínua (2-3px) de núcleos colados viabilizada |
 | **4** | **Passo 3: Watershed & Métricas** | `[✅ Concluído]` | `watershed.py` e `instance.py` | mAP@[0.5:0.95] computado via matching formal Hungarian/Greedy |
-| **5** | **Passo 4: Baseline Semântica** | `[🟡 Em Progresso]` | Pesos da baseline e gráfico de fracasso | Gráfico `mAP vs. Densidade de Objetos` evidenciando queda de performance |
+| **5** | **Passo 4: Baseline Semântica** | `[✅ Concluído]` | `pa1/outputs/`: `parte1_baseline_unet.pt`, `parte1_baseline_results.json`, `parte1_per_image_instance_metrics.csv`, `parte1_resultados.png`, `parte1_qualitativo.png` | Gráfico `mAP vs. Densidade de Objetos` evidenciando queda de performance |
 | **6** | **Passo 5: Trilha A (Fronteiras)** | `[⏳ A Fazer]` | Modelo treinado com Focal Loss | Tabela lado a lado mostrando ganho expressivo de mAP sobre a baseline |
 | **7** | **Passo 6: Ablações** | `[⏳ A Fazer]` | Tabelas de ablação (Eixo 1 e Eixo 2) | Médias e desvios reportados ($\mu \pm \sigma$) em 2 seeds para cada caso |
 | **8** | **Passo 7: Mosaico e Fusão** | `[⏳ A Fazer]` | `mosaic.py` e figuras de costura | Comparação quantitativa do mAP antes e depois da fusão de bordas |
