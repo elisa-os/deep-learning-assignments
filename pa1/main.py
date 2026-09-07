@@ -14,6 +14,7 @@ Uso:
 import argparse
 from pathlib import Path
 import time
+import json
 import numpy as np
 import torch
 import torch.nn as nn
@@ -26,6 +27,7 @@ from pa1.utils import (
     plot_synthetic_samples,
     plot_training_results,
     plot_qualitative_results,
+    PerImageMetricsWriter,
 )
 from pa1.data import make_synthetic_loader, make_dsb2018_loaders
 from pa1.models import UNet
@@ -84,17 +86,43 @@ def evaluate(
     loader,
     device: torch.device,
     max_qualitative_samples: int = 4,
+    metrics_writer: PerImageMetricsWriter | None = None,
 ) -> dict:
     """Avalia o modelo calculando mAP, erro de contagem, IoU e Dice semânticos.
 
-    Returns:
-        dict com métricas médias, distribuições para gráficos e amostras qualitativas.
+    Parameters
+    ----------
+    model : nn.Module
+        Modelo a ser avaliado (já no device correto e em eval mode).
+    loader :
+        DataLoader ou iterable que yield batches com as chaves:
+        "image", "mask_instances", "mask_semantic".
+    device : torch.device
+        Dispositivo onde o modelo e os tensores devem residir.
+    max_qualitative_samples : int
+        Número máximo de imagens (as 4 piores pelo mAP) incluídas no
+        grid qualitativo retornado.
+    metrics_writer : PerImageMetricsWriter | None
+        Se fornecido, cada imagem avaliada é registrada imediatamente
+        (adicionada ao buffer do writer) e, ao final da avaliação, o
+        CSV é persistido em ``output_path / filename`` passado no
+        construtor do writer.
+
+    Returns
+    -------
+    dict
+        Chaves: ``mean_mAP``, ``mean_count_error``, ``mean_iou``,
+        ``mean_dice``, ``densities``, ``maps``, ``samples``.
+        ``samples`` contém até ``max_qualitative_samples`` dicionários
+        com chaves ``image``, ``gt_instances``, ``pred_instances``,
+        ``gt_binary``, ``mAP``, ``idx``.
     """
     model.eval()
     maps, count_errors = [], []
     ious, dices = [], []
     densities = []
     qualitative_samples = []
+    global_idx = 0
 
     for batch in loader:
         images = batch["image"].to(device)
@@ -140,8 +168,23 @@ def evaluate(
                 "pred_instances": pred_inst,
                 "gt_binary": gt_sem.astype(np.uint8),
                 "mAP": result["mAP"],
-                "idx": len(qualitative_samples) + 1,
+                "idx": global_idx + 1,
             })
+
+            # ── Métricas por imagem: escritor externo (se fornecido) ──────────────
+            if metrics_writer is not None:
+                metrics_writer.add(
+                    idx=global_idx,
+                    n_gt=result["n_gt"],
+                    n_pred=result["n_pred"],
+                    count_error=result["count_error"],
+                    iou_sem=iou,
+                    dice_sem=dice,
+                    mAP=result["mAP"],
+                    per_threshold_details=result["per_threshold_details"],
+                    ap_per_threshold=result["AP_per_threshold"],
+                )
+            global_idx += 1
 
     # Seleciona as N amostras com menor mAP para o grid qualitativo (as piores)
     n_show = min(max_qualitative_samples, len(qualitative_samples))
@@ -306,6 +349,10 @@ def main() -> None:
         "val_count_error": [],
     }
 
+    # Escritor de métricas por imagem (persiste no fim da avaliação)
+    # Usado também nas avaliações de época, para registrar progresso das ablações.
+    metrics_writer = PerImageMetricsWriter(output_path)
+
     # ---- Treino ----
     if not cfg.train.eval_only:
         print(f"\nTreinando por {cfg.train.epochs} épocas (lr={cfg.train.lr})...\n")
@@ -315,7 +362,10 @@ def main() -> None:
             history["train_loss"].append(train_loss)
 
             if epoch % 5 == 0 or epoch == cfg.train.epochs:
-                metrics = evaluate(model, val_loader, device)
+                metrics = evaluate(
+                    model, val_loader, device,
+                    metrics_writer=metrics_writer,
+                )
                 history["val_iou"].append(metrics["mean_iou"])
                 history["val_dice"].append(metrics["mean_dice"])
                 history["val_map"].append(metrics["mean_mAP"])
@@ -342,7 +392,7 @@ def main() -> None:
 
     # ---- Avaliação final e salvamento de imagens ----
     print("\n=== Avaliação Final (val) ===")
-    final_metrics = evaluate(model, val_loader, device)
+    final_metrics = evaluate(model, val_loader, device, metrics_writer=metrics_writer)
     print(f"IoU Semântico Médio: {final_metrics['mean_iou']:.4f}")
     print(f"Dice Semântico Médio: {final_metrics['mean_dice']:.4f}")
     print(f"mAP@[0.50:0.95]: {final_metrics['mean_mAP']:.4f}")
@@ -351,7 +401,10 @@ def main() -> None:
     # ---- Avaliação no conjunto de TESTE ----
     if test_loader is not None:
         print("\n=== Avaliação no Teste ===")
-        test_metrics = evaluate(model, test_loader, device, max_qualitative_samples=0)
+        test_metrics = evaluate(
+            model, test_loader, device,
+            max_qualitative_samples=0, metrics_writer=metrics_writer,
+        )
         print(f"IoU Semântico Médio (test): {test_metrics['mean_iou']:.4f}")
         print(f"Dice Semântico Médio (test): {test_metrics['mean_dice']:.4f}")
         print(f"mAP@[0.50:0.95] (test): {test_metrics['mean_mAP']:.4f}")
@@ -361,14 +414,17 @@ def main() -> None:
         print("\n(skip: sem conjunto de teste disponível)")
 
     # ---- Salvar checkpoint ----
-    baseline_dir = output_path / "baseline"
-    baseline_dir.mkdir(parents=True, exist_ok=True)
-    ckpt_path = baseline_dir / "baseline_unet.pt"
+    ckpt_path = output_path / "parte1_baseline_unet.pt"
+    ckpt_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), ckpt_path)
     print(f"\nCheckpoint salvo em: {ckpt_path}")
 
+    # ---- Persistir CSV de métricas por imagem ----
+    if metrics_writer.record_count > 0:
+        csv_path = metrics_writer.write("parte1_per_image_instance_metrics.csv")
+        print(f"Métricas por imagem salvas em: {csv_path}")
+
     # ---- Salvar métricas em JSON para registro ----
-    import json
     metrics_record = {
         "val": {
             "iou": final_metrics["mean_iou"],
@@ -385,7 +441,7 @@ def main() -> None:
             "mAP": test_metrics["mean_mAP"],
             "count_error": test_metrics["mean_count_error"],
         }
-    metrics_json = baseline_dir / "baseline_results.json"
+    metrics_json = output_path / "parte1_baseline_results.json"
     with open(metrics_json, "w") as f:
         json.dump(metrics_record, f, indent=2)
     print(f"Métricas salvas em: {metrics_json}")

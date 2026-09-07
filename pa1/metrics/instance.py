@@ -131,14 +131,23 @@ def compute_map(
     n_gt = len(np.unique(gt_mask[gt_mask > 0]))
 
     ap_per_thr = {}
+    per_thr_details = {}
     for thr in iou_thresholds:
         tp, fp, fn = match_instances(iou_mat, iou_threshold=thr, method=method)
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
         # AP simplificado por limiar (sem curva P-R completa)
         ap_per_thr[thr] = precision * recall / max(precision + recall, 1e-6) * 2  # F1 proxy
+        per_thr_details[thr] = {"tp": tp, "fp": fp, "fn": fn}
 
     mAP = float(np.mean(list(ap_per_thr.values())))
     count_error = abs(n_pred - n_gt)
 
-    return {"mAP": mAP, "AP_per_threshold": ap_per_thr, "count_error": count_error}
+    return {
+        "mAP": mAP,
+        "AP_per_threshold": ap_per_thr,
+        "count_error": count_error,
+        "n_pred": int(n_pred),
+        "n_gt": int(n_gt),
+        "per_threshold_details": per_thr_details,
+    }

@@ -7,6 +7,7 @@ from .visualize import (
     plot_training_results,
     plot_qualitative_results,
 )
+from .export import PerImageMetricsWriter
 
 __all__ = [
     "set_seed",
@@ -16,4 +17,5 @@ __all__ = [
     "plot_synthetic_samples",
     "plot_training_results",
     "plot_qualitative_results",
+    "PerImageMetricsWriter",
 ]
