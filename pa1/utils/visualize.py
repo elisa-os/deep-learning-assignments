@@ -213,8 +213,16 @@ def plot_qualitative_results(
             ax4.set_title("GT 3 classes (int=vermelho, frt=amarelo)")
             ax4.axis("off")
 
-            ax5.imshow(prob_map, cmap="viridis")
-            ax5.set_title("Pred Interior (softmax canal 1)")
+            # prob_map pode ser (3, H, W) em modo 3 classes ou (H, W) em modo binário.
+            # Sempre exibimos o canal de "foreground" como heatmap 2D.
+            if prob_map.ndim == 3:
+                prob_2d = prob_map[1]  # canal 1 = Interior (Trilha A)
+                prob_title = "Prob. Interior (softmax canal 1)"
+            else:
+                prob_2d = prob_map
+                prob_title = "Prob. Foreground"
+            ax5.imshow(prob_2d, cmap="viridis")
+            ax5.set_title(prob_title)
             ax5.axis("off")
 
     for r, lbl in enumerate(row_labels):

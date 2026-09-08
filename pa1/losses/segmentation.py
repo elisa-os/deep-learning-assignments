@@ -83,7 +83,7 @@ class FocalLoss(nn.Module):
 
         p_t = (probs_safe * targets_onehot).sum(dim=1)                     # (B, H, W)
 
-        alpha = self._alpha
+        alpha = self._alpha.to(logits.device)
         if alpha.ndim == 0:
             alpha_t = alpha
         else:

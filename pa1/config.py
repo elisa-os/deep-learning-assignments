@@ -116,11 +116,24 @@ def load_config(
     if parte_int is not None:
         parte_key = f"parte{parte_int}"
         parte_section = raw.get(parte_key, {})
-        # Campos comuns podem vir do nível superior também,
-        # mas a parte sobrescreve quando ambos existem.
-        data_raw = {**raw.get("data", {}), **parte_section.get("data", {})}
-        model_raw = {**raw.get("model", {}), **parte_section.get("model", {})}
-        train_raw = {**raw.get("train", {}), **parte_section.get("train", {})}
+
+        # Suporte a duas estruturas de YAML:
+        #   a) Sub-dicts: parte2: { data: {...}, model: {...}, train: {...} }
+        #   b) Flat (atual): parte2: { synthetic: false, out_channels: 3, epochs: 30, ... }
+        # Campos flat são mapeados para as sub-seções correspondentes.
+        _DATA_FIELDS  = {"synthetic", "data_dir", "n_samples", "batch_size", "num_workers"}
+        _MODEL_FIELDS = {"in_channels", "out_channels"}
+        _TRAIN_FIELDS = {"epochs", "lr", "checkpoint", "eval_only"}
+
+        flat_data  = {k: v for k, v in parte_section.items() if k in _DATA_FIELDS}
+        flat_model = {k: v for k, v in parte_section.items() if k in _MODEL_FIELDS}
+        flat_train = {k: v for k, v in parte_section.items() if k in _TRAIN_FIELDS}
+
+        # Sub-dicts explícitos sobrescrevem flat, que por sua vez sobrescreve o nível raiz
+        data_raw  = {**raw.get("data",  {}), **flat_data,  **parte_section.get("data",  {})}
+        model_raw = {**raw.get("model", {}), **flat_model, **parte_section.get("model", {})}
+        train_raw = {**raw.get("train", {}), **flat_train, **parte_section.get("train", {})}
+
         seed = parte_section.get("seed", seed)
         out_dir_raw = parte_section.get("output_dir", out_dir_raw)
         if out_dir_raw:
@@ -128,7 +141,7 @@ def load_config(
             if not out_dir_path.is_absolute():
                 out_dir_path = path.parent / out_dir_path
     else:
-        data_raw = raw.get("data", {})
+        data_raw  = raw.get("data",  {})
         model_raw = raw.get("model", {})
         train_raw = raw.get("train", {})
         if "output_dir" in raw:
