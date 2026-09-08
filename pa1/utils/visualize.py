@@ -163,7 +163,7 @@ def plot_qualitative_results(
     row_labels = ["Imagem Original", "GT Instâncias", "Pred Instâncias", "Binária GT"]
     extra_rows = 0
     for s in samples:
-        if s.get("gt_3class") is not None and s.get("prob_map") is not None:
+        if s.get("gt_3class") is not None and s.get("prob_map") is not None and np.ndim(s["prob_map"]) == 3:
             extra_rows = 2
             break
 

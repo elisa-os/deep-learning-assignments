@@ -336,7 +336,7 @@ def build_config(args: argparse.Namespace) -> Config:
             raise FileNotFoundError(f"Arquivo de configuração não encontrado: {args.config}")
 
     parte_str = _parse_parte_arg(args.parte)
-    cfg = load_config(config_path, passo=parte_str)
+    cfg = load_config(config_path, parte=parte_str)
 
     # Overrides opcionais
     if args.synthetic is not None:
