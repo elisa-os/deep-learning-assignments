@@ -32,6 +32,7 @@ class DataConfig:
 class ModelConfig:
     in_channels: int = 1
     out_channels: int = 2
+    use_skips: bool = True  # False = decoder sem skip connections (ablação Eixo 1)
 
 
 @dataclass
@@ -40,6 +41,8 @@ class TrainConfig:
     lr: float = 1e-3
     checkpoint: str | None = None
     eval_only: bool = False
+    loss_gamma: float = 2.0   # gamma da FocalLoss (0 = CE ponderada; ablação Eixo 2)
+    loss_alpha: list | None = None  # pesos por classe; None → [1.0, 1.0, 2.5]
 
 
 @dataclass
@@ -122,8 +125,8 @@ def load_config(
         #   b) Flat (atual): parte2: { synthetic: false, out_channels: 3, epochs: 30, ... }
         # Campos flat são mapeados para as sub-seções correspondentes.
         _DATA_FIELDS  = {"synthetic", "data_dir", "n_samples", "batch_size", "num_workers"}
-        _MODEL_FIELDS = {"in_channels", "out_channels"}
-        _TRAIN_FIELDS = {"epochs", "lr", "checkpoint", "eval_only"}
+        _MODEL_FIELDS = {"in_channels", "out_channels", "use_skips"}
+        _TRAIN_FIELDS = {"epochs", "lr", "checkpoint", "eval_only", "loss_gamma", "loss_alpha"}
 
         flat_data  = {k: v for k, v in parte_section.items() if k in _DATA_FIELDS}
         flat_model = {k: v for k, v in parte_section.items() if k in _MODEL_FIELDS}

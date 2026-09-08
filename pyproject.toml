@@ -23,6 +23,7 @@ dependencies = [
 
 [project.scripts]
 pa1 = "pa1.main:main"
+pa1-ablation = "pa1.ablation:main"
 
 # ─── PyTorch cu118 ────────────────────────────────────────────────────────────
 # torch>=2.6.0+cu118 é a última release compilada com CUDA 11.8, que inclui

@@ -431,6 +431,7 @@ def main() -> None:
     model = UNet(
         in_channels=in_channels,
         out_channels=cfg.model.out_channels,
+        use_skips=cfg.model.use_skips,
     ).to(device)
 
     # ---- Loss ----
@@ -438,8 +439,8 @@ def main() -> None:
     if n_classes >= 3:
         # Trilha A: 3 classes (fundo/interior/fronteira)
         # Focal Loss multiclasse com peso maior para a classe fronteira (2)
-        alpha_values = [1.0, 1.0, 2.5]  # frontier:boundary ratio
-        criterion = FocalLoss(alpha=alpha_values, gamma=2.0, reduction="mean")
+        alpha_values = cfg.train.loss_alpha or [1.0, 1.0, 2.5]
+        criterion = FocalLoss(alpha=alpha_values, gamma=cfg.train.loss_gamma, reduction="mean")
     else:
         # Segmentação binária
         criterion = BCEDiceLoss(bce_weight=0.5)

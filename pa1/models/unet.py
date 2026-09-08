@@ -78,6 +78,19 @@ class UNet(nn.Module):
         in_channels: Canais de entrada (1 para escala de cinza, 3 para RGB).
         out_channels: Classes de saída (2 para binário, N para N classes).
         features: Lista com o número de filtros em cada nível do encoder.
+        use_skips: Se True (padrão), usa skip connections concatenando as
+            ativações do encoder no decoder — estilo U-Net clássico.
+            Se False, o decoder faz upsampling puro sem concatenação —
+            estilo decoder simplificado (ablação do Eixo 1, Parte 3).
+
+    Por que os skips importam?
+    --------------------------
+    Sem skip connections o decoder recebe apenas o mapa de features do
+    bottleneck, perdendo as informações de alta frequência (bordas, texturas)
+    capturadas nas camadas rasas do encoder. O resultado é uma segmentação
+    de baixa resolução efetiva: o modelo acerta o "onde" mas erra as bordas
+    finas entre núcleos encostados. Com skips, as bordas são recuperadas
+    pixel a pixel — daí o ganho esperado em mAP de instância.
     """
 
     def __init__(
@@ -85,8 +98,10 @@ class UNet(nn.Module):
         in_channels: int = 1,
         out_channels: int = 2,
         features: list[int] | None = None,
+        use_skips: bool = True,
     ) -> None:
         super().__init__()
+        self.use_skips = use_skips
         if features is None:
             features = [32, 64, 128, 256]
 
@@ -103,13 +118,16 @@ class UNet(nn.Module):
         self.bottleneck = _DoubleConv(features[-1], features[-1] * 2)
 
         # ---- Decoder ----
+        # Com skips: _DoubleConv(f*2, f)  — entrada dobrada pela concatenação.
+        # Sem skips: _DoubleConv(f,   f)  — entrada é só o resultado do upconv.
         self.upconvs = nn.ModuleList()
         self.decoders = nn.ModuleList()
         rev = list(reversed(features))
         ch = features[-1] * 2
         for f in rev:
             self.upconvs.append(nn.ConvTranspose2d(ch, f, kernel_size=2, stride=2))
-            self.decoders.append(_DoubleConv(f * 2, f))  # *2 por causa do skip
+            dec_in = f * 2 if use_skips else f
+            self.decoders.append(_DoubleConv(dec_in, f))
             ch = f
 
         # ---- Cabeça final ----
@@ -126,13 +144,19 @@ class UNet(nn.Module):
 
         x = self.bottleneck(x)
 
-        # Decoder: upsampling + concatena skip + convoluções
-        for up, dec, skip in zip(self.upconvs, self.decoders, reversed(skips)):
-            x = up(x)
-            # Alinha tamanhos caso haja diferença de 1 pixel (padding)
-            if x.shape != skip.shape:
-                x = F.interpolate(x, size=skip.shape[2:])
-            x = torch.cat([skip, x], dim=1)
-            x = dec(x)
+        if self.use_skips:
+            # Decoder com skip: upsampling + concatena feature do encoder + convoluções
+            for up, dec, skip in zip(self.upconvs, self.decoders, reversed(skips)):
+                x = up(x)
+                # Alinha tamanhos caso haja diferença de 1 pixel (padding ímpar)
+                if x.shape != skip.shape:
+                    x = F.interpolate(x, size=skip.shape[2:])
+                x = torch.cat([skip, x], dim=1)
+                x = dec(x)
+        else:
+            # Decoder sem skip: upsampling puro, sem informação do encoder
+            for up, dec in zip(self.upconvs, self.decoders):
+                x = up(x)
+                x = dec(x)
 
         return self.head(x)
