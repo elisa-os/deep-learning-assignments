@@ -6,6 +6,5 @@ Um exemplo obrigatório do que deve ser feito para a filosofia acima: referencia
 
 Prefira soluções simples, didáticas e funcionais a soluções sofisticadas mas complexas
 
-
 Documente interações com a IA no AI_LOG.md, para registrarmos o que foi feito usando esta ferramenta de inteligencia artificial
 
