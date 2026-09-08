@@ -50,8 +50,20 @@ def watershed_to_instances(
     # --- marcadores: componentes conexos dentro do limiar alto ---
     markers_mask = p_int > marker_threshold
     seeds, n_seeds = ndimage.label(markers_mask)
+    
     if n_seeds < 1:
         return np.zeros(p_int.shape, dtype=np.int32)
+        
+    # Otimização crucial: filtrar sementes microscópicas ANTES do watershed.
+    # Quando o modelo está destreinado, ele pode gerar milhares de sementes 
+    # de 1 pixel. O algoritmo de watershed (que usa uma Priority Queue) sofre.
+    if min_area > 0 and n_seeds > 0:
+        seed_areas = np.bincount(seeds.ravel())
+        # Sementes podem ser um pouco menores que a área final, então usamos 
+        # um critério mais leniente (min_area // 3 ou no mínimo 2 pixels)
+        tiny_seeds = np.where((seed_areas < max(2, min_area // 3)) & (seed_areas > 0))[0]
+        if tiny_seeds.size > 0:
+            seeds[np.isin(seeds, tiny_seeds)] = 0
 
     # --- bacia: negativo da probabilidade (ou distância negativa) ---
     if distance_map is not None:
@@ -65,11 +77,17 @@ def watershed_to_instances(
 
     # --- filtrar ruído por área ---
     if min_area > 0:
-        lbl, _ = ndimage.label(inst > 0)
-        for l in range(1, lbl.max() + 1):
-            if (inst == l).sum() < min_area:
-                inst[inst == l] = 0
-
+        # Vetorização: bincount conta os pixels de cada label instantaneamente.
+        # inst vai de 0 até inst.max().
+        areas = np.bincount(inst.ravel())
+        
+        # Filtra instâncias (ignorando o fundo 0) que são menores que min_area
+        too_small = np.where((areas < min_area) & (areas > 0))[0]
+        
+        if too_small.size > 0:
+            # Zera todas as instâncias muito pequenas de uma vez
+            inst[np.isin(inst, too_small)] = 0
+            
     return inst.astype(np.int32)
 
 
