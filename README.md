@@ -57,8 +57,45 @@ O **Programming Assignment 1 (PA1)** foca em adaptar arquiteturas de segmentaç�
 * **Teste de Estresse:** Corrupções sintéticas (Gaussian Blur, Ruído Gaussiano e Contraste) em 3 intensidades com curvas de degradação do mAP.
 * **Métrica Oficial:** mAP@[0.50:0.05:0.95] computado via matching Hungarian e Erro Médio de Contagem.
 
-Consulte o documento completo:  
+Consulte o documento completo para o plano de execução:  
 👉 **[pa1/PLANO_DE_EXECUCAO.md](pa1/PLANO_DE_EXECUCAO.md)**
+
+---
+
+## 🗺️ Mapeamento das Partes (PA1.pdf)
+
+Conforme a filosofia didática do projeto, abaixo está o mapeamento exato de cada etapa requisitada no PDF oficial, explicando **onde** foi implementada e **como** reproduzi-la.
+
+* **Parte 0: Aquecimento Sintético**
+  * *Onde:* `pa1/data/synthetic.py` (Dataset), `pa1/main.py` (Treino base).
+  * *Como reproduzir:* `uv run pa1 0`
+  * *Descrição:* Teste unitário gerando elipses para validar as métricas (IoU, Dice, mAP, Contagem).
+
+* **Parte 1: Segmentação Semântica (Baseline)**
+  * *Onde:* `pa1/data/dsb2018.py` (Dataset), `pa1/postprocessing/connected_components.py` (Componentes Conexos).
+  * *Como reproduzir:* `uv run pa1 1`
+  * *Descrição:* U-Net binária rodando no DSB2018. Evidencia o limite semântico quando instâncias se tocam.
+
+* **Parte 2: Trilha A — Fronteiras e Watershed**
+  * *Onde:* `pa1/data/targets.py` (Target 3 classes), `pa1/losses/segmentation.py` (Focal Loss Multiclasse), `pa1/postprocessing/watershed.py` (Watershed).
+  * *Como reproduzir:* `uv run pa1 2`
+  * *Descrição:* Solução principal que resolve a colagem de células adicionando a classe "fronteira" e extraindo instâncias via bacia topográfica.
+
+* **Parte 3: Ablações**
+  * *Onde:* `pa1/ablation.py` (Script automatizado), `pa1/models/unet.py` (Decoder sem skips).
+  * *Como reproduzir:* `uv run pa1-ablation`
+  * *Descrição:* Investiga cientificamente a importância das Skip Connections (Eixo 1) e da curva da Focal Loss com $\gamma \in \{0,1,2,5\}$ (Eixo 2). Gera gráficos no diretório de saídas.
+
+* **Parte 4: Mosaico de Grandes Imagens** *(⏳ Pendente)*
+  * *Onde será:* `pa1/tiling/mosaic.py`
+  * *Descrição:* Vai implementar costura em janelas deslizantes (overlap) e algoritmo de mesclagem de instâncias nas bordas.
+
+* **Parte 5: Campo Receptivo e Falhas** *(⏳ Pendente)*
+  * *Descrição:* Dedução analítica do Receptive Field da U-Net e galeria diagnosticando os 5 piores erros (mAP) do modelo final da Parte 2.
+
+* **Parte 6: Teste de Estresse** *(⏳ Pendente)*
+  * *Onde será:* `pa1/stress/corruptions.py`
+  * *Descrição:* Avaliação do modelo congelado sob perturbações de blur, ruído e contraste.
 
 ---
 
