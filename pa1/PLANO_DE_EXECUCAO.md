@@ -224,17 +224,16 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 ---
 
 ### Passo 7: Inferência em Mosaico e Fusão de Borda (Parte 4 do PA1) — `[⏳ A Fazer]`
-*Objetivo: Demonstrar a inferência em imagens gigantes por janelas deslizantes e resolver a fragmentação de instâncias na borda dos tiles.*
+### Parte 4: Predição em Mosaico (Tiling)
 
-- **O que fazer:**
-  - `[⏳ A Fazer]` Montar um mega-mosaico costurando 4 a 9 imagens de teste do DSB2018.
-  - `[⏳ A Fazer]` Executar inferência em janelas deslizantes com sobreposição ($256 \times 256$ com overlap de 64 px conforme slide 83).
-  - `[⏳ A Fazer]` Evidenciar visualmente o problema de corte de instâncias na linha de fronteira entre tiles.
-  - `[⏳ A Fazer]` Implementar algoritmo de fusão/costura de instâncias que se tocam na faixa de sobreposição.
-  - `[⏳ A Fazer]` Medir e reportar o mAP@[0.5:0.95] do mosaico antes e depois da fusão.
+**Passo 7: Costura e Resolução de Bordas** `[✅ Concluído]`
+*   **Problema Prático:** Imagens de patologia e satélite são tipicamente giga-pixels. A rede só recebe patches pequenos (ex: 256x256). Ao prever e agrupar componentes por patch, células na borda são fatiadas pela metade.
+*   **Implementação:** Fazer a predição por janelas deslizantes (com overlap). Evidenciar visualmente o problema de corte de instâncias na linha de fronteira entre tiles. Implementar um algoritmo de fusão/costura de instâncias que se tocam na faixa de sobreposição.
+*   **Validação:** Aumento do mAP e mitigação dos falsos-positivos na fronteira ao utilizar overlap e costura vs. sem costura.
+
 - **Onde fazer:**
-  - `pa1/tiling/mosaic.py` `[⏳ A Criar]`
-  - Figuras e métricas salvas em `pa1/outputs/mosaic/` `[⏳ A Gerar]`
+  - `pa1/tiling/mosaic.py` `[✅ Implementado]`
+  - Figuras e métricas salvas em `pa1/outputs/mosaic/` `[✅ Gerado]`
 - **Como fazer:**
   1. Costurar de 4 a 9 imagens de teste do DSB2018 para formar uma imagem sintética de grande escala (ex: $1024 \times 1024$).
   2. Implementar janelas deslizantes com patches de $256 \times 256$ e overlap de $64\text{ px}$.

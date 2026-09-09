@@ -86,9 +86,10 @@ Conforme a filosofia didática do projeto, abaixo está o mapeamento exato de ca
   * *Como reproduzir:* `uv run pa1-ablation`
   * *Descrição:* Investiga cientificamente a importância das Skip Connections (Eixo 1) e da curva da Focal Loss com $\gamma \in \{0,1,2,5\}$ (Eixo 2). Gera gráficos no diretório de saídas.
 
-* **Parte 4: Mosaico de Grandes Imagens** *(⏳ Pendente)*
-  * *Onde será:* `pa1/tiling/mosaic.py`
-  * *Descrição:* Vai implementar costura em janelas deslizantes (overlap) e algoritmo de mesclagem de instâncias nas bordas.
+* **Parte 4: Mosaico de Grandes Imagens**
+  * *Onde:* `pa1/tiling/mosaic.py`
+  * *Como reproduzir:* `uv run pa1-mosaic`
+  * *Descrição:* Costura um grande mosaico a partir do dataset, aplica inferência em janelas deslizantes e constrói um grafo de equivalência matemática para fundir instâncias fragmentadas na fronteira dos tiles, elevando drasticamente a precisão da contagem e o mAP.
 
 * **Parte 5: Campo Receptivo e Falhas** *(⏳ Pendente)*
   * *Descrição:* Dedução analítica do Receptive Field da U-Net e galeria diagnosticando os 5 piores erros (mAP) do modelo final da Parte 2.

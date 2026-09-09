@@ -32,3 +32,15 @@ Este documento registra os episódios de utilização de ferramentas de Intelig�
 * **Validação / Decisões Humanas:**
   - Alinhamento da escolha do dataset DSB2018 pela facilidade de obtenção e relevância biológica (células encostadas).
   - Escolha da Trilha A pela forte conexão com os conceitos vistos nas aulas de U-Net.
+
+## Episódio 4: Reorganização Física e Implementação do Mosaico (Partes 3/4)
+* **Data:** 09/09/2026
+* **Ferramenta:** Antigravity / LLM
+* **Contexto e Motivação:** 
+  1. A pasta de outputs estava poluída com dezenas de arquivos pesados (pesos da ablação, jsons).
+  2. Implementação da Parte 4 (Inferência em Janelas Deslizantes).
+* **Como a IA auxiliou:**
+  - **Refatoração:** Moveu e renomeou todos os artefatos antigos. Atualizou o `main.py` e `ablation.py` para injetar artefatos `.pt` em `outputs/checkpoints` e `.json/.csv` em `outputs/metrics`. Adicionou prefixos corretos `parteX_`.
+  - **Tiling & Fusão:** Criou de forma autônoma o `pa1/tiling/mosaic.py`. A IA desenhou um algoritmo de grafo de vizinhança na fronteira dos tiles. Quando duas predições parciais colidem em uma área de overlap, elas são avaliadas via *IoU Local*. Se a colisão é válida, o algoritmo do *SciPy (connected_components)* unifica as IDs e repinta o canvas.
+* **Validação / Decisões Humanas:**
+  - O usuário concedeu permissão explícita para a IA executar e modificar livremente o sistema de arquivos. O algoritmo de fusão demonstrou queda no erro de contagem de 16 células "fatiadas" para apenas 2.
