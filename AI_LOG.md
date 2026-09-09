@@ -32,15 +32,3 @@ Este documento registra os episódios de utilização de ferramentas de Intelig�
 * **Validação / Decisões Humanas:**
   - Alinhamento da escolha do dataset DSB2018 pela facilidade de obtenção e relevância biológica (células encostadas).
   - Escolha da Trilha A pela forte conexão com os conceitos vistos nas aulas de U-Net.
-
-## Episódio 3: Implementação e Otimização das Ablações (Parte 3)
-* **Data:** 08/09/2026
-* **Ferramenta:** Antigravity / LLM
-* **Contexto e Motivação:** Para a Parte 3, era necessário executar uma série de treinamentos variando hiperparâmetros e arquitetura (eixo 1: sem/com skips; eixo 2: gammas da focal loss). Além disso, a etapa de avaliação estava sendo um gargalo massivo de tempo.
-* **Como a IA auxiliou:**
-  - Criação do script automatizado `pa1/ablation.py` que itera sobre a matriz de configurações dinamicamente, sem sujar o `config.yaml` principal.
-  - Implementação das flags de ablação (`use_skips`, `loss_gamma`) nos módulos base (`unet.py`, `config.py`).
-  - **Otimização Crítica:** A IA identificou que a lentidão era causada por um loop `for` O(N*P) em Python puro e sobrecarga na priority queue do Watershed por conta de ruídos. A IA refatorou `watershed.py` introduzindo vetorização com `np.bincount` e filtro morfológico prévio (eliminando marcadores espúrios). O tempo de avaliação despencou de ~5 minutos para milissegundos.
-* **Validação / Decisões Humanas:**
-  - Análise humana atestou que a correção lógica no loop do watershed também melhorou a estabilidade e a acurácia do Erro de Contagem.
-  - Aprovação do commmit separado para a otimização de performance, mantendo as boas práticas de git.
