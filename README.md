@@ -116,7 +116,7 @@ uv run pa1 parte2_baseline  # também equivalente a "2" (extrai o número)
 Overrides pontuais ainda funcionam:
 ```bash
 uv run pa1 0 --epochs 10 --lr 1e-4   # sobrescreve epochs/lr da parte0
-uv run pa1 2 --eval-only --checkpoint outputs/trilhaA_baseline_unet.pt  # avalia só
+uv run pa1 2 --eval-only --checkpoint outputs/checkpoints/parte2_baseline_unet.pt  # avalia só
 ```
 
 ### Parte 0 — Teste unitário sintético (elipses)
@@ -134,11 +134,11 @@ uv run pa1 0 --epochs 10
 uv run pa1 0 --epochs 5 --batch-size 16 --lr 1e-3
 
 # Avaliação só:
-uv run pa1 0 --eval-only --checkpoint pa1/outputs/parte0_baseline_unet.pt
+uv run pa1 0 --eval-only --checkpoint pa1/outputs/checkpoints/parte0_baseline_unet.pt
 ```
 
 **Saídas (em `pa1/outputs/`):**
-- `pa1/outputs/synthetic_samples.png` — grid 2×4 com imagens + máscara de instâncias sintéticas
+- `pa1/outputs/parte0_synthetic_samples.png` — grid 2×4 com imagens + máscara de instâncias sintéticas
 - `pa1/outputs/parte0_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
 - `pa1/outputs/parte0_qualitativo.png` — grid 4×4 comparativo (imagem / GT / predição / binário)
 
@@ -159,15 +159,15 @@ uv run pa1 1 --epochs 20
 uv run pa1 1 --epochs 5 --batch-size 4 --lr 1e-3
 
 # Avaliação só:
-uv run pa1 1 --eval-only --checkpoint pa1/outputs/parte1_baseline_unet.pt
+uv run pa1 1 --eval-only --checkpoint pa1/outputs/checkpoints/parte1_baseline_unet.pt
 ```
 
 > **Dica de epochs:** o YAML `pa1/config.yaml` na seção `parte1` define o número de epochs usado quando nenhuma flag `--epochs` é passada. Use `--epochs N` para sobrescrever.
 
 **Saídas (em `pa1/outputs/`):**
-- `pa1/outputs/parte1_baseline_unet.pt` — pesos do modelo treinado (checkpoint)
-- `pa1/outputs/parte1_baseline_results.json` — resumo JSON com métricas médias de val e test
-- `pa1/outputs/parte1_per_image_instance_metrics.csv` — métricas completas por imagem (ver abaixo)
+- `pa1/outputs/checkpoints/parte1_baseline_unet.pt` — pesos do modelo treinado (checkpoint)
+- `pa1/outputs/metrics/parte1_baseline_results.json` — resumo JSON com métricas médias de val e test
+- `pa1/outputs/metrics/parte1_per_image_instance_metrics.csv` — métricas completas por imagem (ver abaixo)
 - `pa1/outputs/parte1_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
 - `pa1/outputs/parte1_qualitativo.png` — grid 4×4 comparativo sobre dados reais (imagem / GT / predição / binário)
 
@@ -188,17 +188,17 @@ uv run pa1 2 --epochs 30
 uv run pa1 2 --epochs 5 --batch-size 4 --lr 1e-3
 
 # Avaliação só:
-uv run pa1 2 --eval-only --checkpoint pa1/outputs/trilhaA_baseline_unet.pt
+uv run pa1 2 --eval-only --checkpoint pa1/outputs/checkpoints/parte2_baseline_unet.pt
 ```
 
 > **Dica de epochs:** a Trilha A geralmente precisa de mais épocas que a baseline binária (20-40) para a fronteira convergir.
 
 **Saídas (em `pa1/outputs/`):**
-- `pa1/outputs/trilhaA_baseline_unet.pt` — pesos do modelo treinado com 3 classes
-- `pa1/outputs/trilhaA_baseline_results.json` — resumo JSON com métricas médias
-- `pa1/outputs/trilhaA_per_image_instance_metrics.csv` — métricas por imagem (Watershed)
-- `pa1/outputs/trilhaA_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
-- `pa1/outputs/trilhaA_qualitativo.png` — grid 4×4 comparativo com decodificação Watershed
+- `pa1/outputs/checkpoints/parte2_baseline_unet.pt` — pesos do modelo treinado com 3 classes
+- `pa1/outputs/metrics/parte2_baseline_results.json` — resumo JSON com métricas médias
+- `pa1/outputs/metrics/parte2_per_image_instance_metrics.csv` — métricas por imagem (Watershed)
+- `pa1/outputs/parte2_resultados.png` — curvas de loss/IoU/Dice + dispersão mAP × densidade
+- `pa1/outputs/parte2_qualitativo.png` — grid 4×4 comparativo com decodificação Watershed
 
 ---
 
@@ -210,7 +210,7 @@ Todas as figuras e artefatos são salvos diretamente em `pa1/outputs/`. Se o arq
 
 | Arquivo | Quando é gerado | Descrição |
 |---------|-----------------|-----------|
-| `outputs/synthetic_samples.png` | Parte 0 (sintético) | Grid 2×4: imagens de elipses + máscaras de instâncias coloridas |
+| `outputs/parte0_synthetic_samples.png` | Parte 0 (sintético) | Grid 2×4: imagens de elipses + máscaras de instâncias coloridas |
 | `outputs/parte0_resultados.png` | Parte 0 (sintético) | Painel 3 gráficos: loss, IoU/Dice semânticos, mAP vs. densidade |
 | `outputs/parte0_qualitativo.png` | Parte 0 (sintético) | Grid 4×4: imagem original, GT instâncias, predição, GT binário |
 
@@ -218,9 +218,9 @@ Todas as figuras e artefatos são salvos diretamente em `pa1/outputs/`. Se o arq
 
 || Arquivo | Quando é gerado | Descrição |
 ||---------|-----------------|-----------|
-|| `outputs/parte1_baseline_unet.pt` | Parte 1 (treino ou eval-only) | Pesos do modelo final (checkpoint) |
-|| `outputs/parte1_baseline_results.json` | Parte 1 (final da avaliação) | Métricas médias de validação e teste: IoU, Dice, mAP, erro de contagem |
-|| `outputs/parte1_per_image_instance_metrics.csv` | Parte 1 (final da avaliação) | Métricas completas por imagem (ver seção abaixo) |
+|| `outputs/checkpoints/parte1_baseline_unet.pt` | Parte 1 (treino ou eval-only) | Pesos do modelo final (checkpoint) |
+|| `outputs/metrics/parte1_baseline_results.json` | Parte 1 (final da avaliação) | Métricas médias de validação e teste: IoU, Dice, mAP, erro de contagem |
+|| `outputs/metrics/parte1_per_image_instance_metrics.csv` | Parte 1 (final da avaliação) | Métricas completas por imagem (ver seção abaixo) |
 || `outputs/parte1_resultados.png` | Parte 1 (DSB2018) | Mesmo formato do parte0_resultados.png, mas sobre dados reais |
 || `outputs/parte1_qualitativo.png` | Parte 1 (DSB2018) | Mesmo formato do parte0_qualitativo.png, mas sobre dados reais |
 
@@ -228,11 +228,11 @@ Todas as figuras e artefatos são salvos diretamente em `pa1/outputs/`. Se o arq
 
 || Arquivo | Quando é gerado | Descrição |
 ||---------|-----------------|-----------|
-|| `outputs/trilhaA_baseline_unet.pt` | Parte 2 (treino ou eval-only) | Pesos do modelo final com 3 classes (checkpoint) |
-|| `outputs/trilhaA_baseline_results.json` | Parte 2 (final da avaliação) | Métricas médias de validação e teste: IoU, Dice, mAP, erro de contagem |
-|| `outputs/trilhaA_per_image_instance_metrics.csv` | Parte 2 (final da avaliação) | Métricas completas por imagem — decodificação Watershed |
-|| `outputs/trilhaA_resultados.png` | Parte 2 (DSB2018) | Mesmo formato do parte1_resultados.png, mas para 3 classes |
-|| `outputs/trilhaA_qualitativo.png` | Parte 2 (DSB2018) | Grid 4×4 com decodificação Watershed sobre dados reais |
+|| `outputs/checkpoints/parte2_baseline_unet.pt` | Parte 2 (treino ou eval-only) | Pesos do modelo final com 3 classes (checkpoint) |
+|| `outputs/metrics/parte2_baseline_results.json` | Parte 2 (final da avaliação) | Métricas médias de validação e teste: IoU, Dice, mAP, erro de contagem |
+|| `outputs/metrics/parte2_per_image_instance_metrics.csv` | Parte 2 (final da avaliação) | Métricas completas por imagem — decodificação Watershed |
+|| `outputs/parte2_resultados.png` | Parte 2 (DSB2018) | Mesmo formato do parte1_resultados.png, mas para 3 classes |
+|| `outputs/parte2_qualitativo.png` | Parte 2 (DSB2018) | Grid 4×4 com decodificação Watershed sobre dados reais |
 
 ---
 
@@ -274,13 +274,13 @@ idx,n_gt,n_pred,count_error,iou_sem,dice_sem,mAP,tp_50,fp_50,fn_50,ap_50,tp_55,f
 cd pa1
 
 # 5 piores imagens pelo mAP (para galeria de falhas da Parte 5):
-uv run python -c "import pandas as pd; df=pd.read_csv('outputs/parte1_per_image_instance_metrics.csv'); print(df.sort_values('mAP').head(5))"
+uv run python -c "import pandas as pd; df=pd.read_csv('outputs/metrics/parte1_per_image_instance_metrics.csv'); print(df.sort_values('mAP').head(5))"
 
 # 5 melhores imagens:
-uv run python -c "import pandas as pd; df=pd.read_csv('outputs/parte1_per_image_instance_metrics.csv'); print(df.sort_values('mAP', ascending=False).head(5))"
+uv run python -c "import pandas as pd; df=pd.read_csv('outputs/metrics/parte1_per_image_instance_metrics.csv'); print(df.sort_values('mAP', ascending=False).head(5))"
 
 # Distribuição de erro de contagem:
-uv run python -c "import pandas as pd; df=pd.read_csv('outputs/parte1_per_image_instance_metrics.csv'); print(df['count_error'].value_counts().sort_index())"
+uv run python -c "import pandas as pd; df=pd.read_csv('outputs/metrics/parte1_per_image_instance_metrics.csv'); print(df['count_error'].value_counts().sort_index())"
 ```
 
 ### Reuso nas partes seguintes
@@ -331,7 +331,7 @@ model:
 train:
   epochs: 20
   lr: 1.0e-3
-  checkpoint: null              # ex: pa1/outputs/parte1_baseline_unet.pt
+  checkpoint: null              # ex: pa1/outputs/checkpoints/parte1_baseline_unet.pt
   eval_only: false              # true = pula treino, só avalia
 ```
 
@@ -342,5 +342,5 @@ Overrides via linha de comando (ex: `--epochs 5 --lr 1e-3`) sobrescrevem os valo
 ## 📄 Notas
 
 - **Regra de histórico:** Se uma imagem com o mesmo nome já existir na raiz de `outputs/`, ela é substituída pela mais recente. Caso deseje arquivar execuções anteriores, crie subpastas dentro de `outputs/` (ex: `outputs/historico/`); o pipeline não mexe nem lê arquivos dentro de subpastas.
-- **Checkpoint de avaliação única:** Use `--eval-only --checkpoint pa1/outputs/parte1_baseline_unet.pt` para avaliar sem retreinar. O CSV de métricas por imagem também é gerado nesse modo.
+- **Checkpoint de avaliação única:** Use `--eval-only --checkpoint pa1/outputs/checkpoints/parte1_baseline_unet.pt` para avaliar sem retreinar. O CSV de métricas por imagem também é gerado nesse modo.
 - **API de exportação:** A classe `PerImageMetricsWriter` está disponível em `pa1/utils/export.py` para reuso em partes subsequentes.

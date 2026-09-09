@@ -366,7 +366,7 @@ def build_config(args: argparse.Namespace) -> Config:
     elif parte_str == "1":
         cfg.mode_tag = "parte1"
     elif parte_str == "2":
-        cfg.mode_tag = "trilhaA"
+        cfg.mode_tag = "parte2"
 
     return cfg
 
@@ -411,7 +411,7 @@ def main() -> None:
             split="val",
         )
 
-        samples_fig = output_path / "synthetic_samples.png"
+        samples_fig = output_path / "parte0_synthetic_samples.png"
         saved_samples_path = plot_synthetic_samples(train_loader.dataset, samples_fig)
         print(f"Amostras do dataset salvas em: {saved_samples_path}")
 
@@ -465,7 +465,7 @@ def main() -> None:
 
     # Escritor de métricas por imagem (persiste no fim da avaliação)
     # Usado também nas avaliações de época, para registrar progresso das ablações.
-    metrics_writer = PerImageMetricsWriter(output_path)
+    metrics_writer = PerImageMetricsWriter(output_path / "metrics")
 
     # ---- Treino ----
     if not cfg.train.eval_only:
@@ -528,7 +528,7 @@ def main() -> None:
         print("\n(skip: sem conjunto de teste disponível)")
 
     # ---- Salvar checkpoint ----
-    ckpt_path = output_path / f"{mode_tag}_baseline_unet.pt"
+    ckpt_path = output_path / "checkpoints" / f"{mode_tag}_baseline_unet.pt"
     ckpt_path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), ckpt_path)
     print(f"\nCheckpoint salvo em: {ckpt_path}")
@@ -555,7 +555,8 @@ def main() -> None:
             "mAP": test_metrics["mean_mAP"],
             "count_error": test_metrics["mean_count_error"],
         }
-    metrics_json = output_path / f"{mode_tag}_baseline_results.json"
+    metrics_json = output_path / "metrics" / f"{mode_tag}_baseline_results.json"
+    metrics_json.parent.mkdir(parents=True, exist_ok=True)
     with open(metrics_json, "w") as f:
         json.dump(metrics_record, f, indent=2)
     print(f"Métricas salvas em: {metrics_json}")

@@ -129,7 +129,9 @@ def run_single(
     final = evaluate(model, val_loader, device, max_qualitative_samples=0)
 
     # ── Salva checkpoint ──────────────────────────────────────────────────────
-    ckpt = output_path / f"{run_name}_seed{seed}.pt"
+    ckpt_dir = output_path / "parte3_ablation" / "checkpoints"
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    ckpt = ckpt_dir / f"{run_name}_seed{seed}.pt"
     torch.save(model.state_dict(), ckpt)
 
     return {
@@ -208,7 +210,7 @@ def plot_ablation_results(
         labs1, mus1, sigs1,
         title="Eixo 1 — Skip Connections: mAP@[0.50:0.95] (μ ± σ, 2 seeds)",
         ylabel="mAP@[0.50:0.95]",
-        save_path=output_path / "ablation_eixo1_map.png",
+        save_path=output_path / "parte3_ablation_eixo1_map.png",
         colors=colors1,
     )
 
@@ -219,7 +221,7 @@ def plot_ablation_results(
         labs2, mus2, sigs2,
         title="Eixo 2 — Focal Loss γ: mAP@[0.50:0.95] (μ ± σ, 2 seeds)",
         ylabel="mAP@[0.50:0.95]",
-        save_path=output_path / "ablation_eixo2_map.png",
+        save_path=output_path / "parte3_ablation_eixo2_map.png",
         colors=colors2,
     )
 
@@ -229,7 +231,7 @@ def plot_ablation_results(
         labs2c, mus2c, sigs2c,
         title="Eixo 2 — Focal Loss γ: Erro de Contagem Médio (μ ± σ, 2 seeds)",
         ylabel="Erro Absoluto Médio de Contagem",
-        save_path=output_path / "ablation_eixo2_count.png",
+        save_path=output_path / "parte3_ablation_eixo2_count.png",
         colors=colors2,
     )
 
@@ -314,7 +316,7 @@ def main() -> None:
     device = get_device()
 
     # ── Cria pasta de saída ───────────────────────────────────────────────────
-    output_path = Path(base_cfg.output_dir) / "ablation"
+    output_path = Path(base_cfg.output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
     n_total = len(ABLATIONS) * len(SEEDS)
@@ -365,14 +367,17 @@ def main() -> None:
             )
 
     # ── Salva resultados brutos em JSON ───────────────────────────────────────
-    results_json = output_path / "ablation_results.json"
+    metrics_dir = output_path / "parte3_ablation" / "metrics"
+    metrics_dir.mkdir(parents=True, exist_ok=True)
+    
+    results_json = metrics_dir / "ablation_results.json"
     with open(results_json, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nResultados brutos salvos em: {results_json}")
 
     # ── Salva CSV agregado ────────────────────────────────────────────────────
     import csv
-    csv_path = output_path / "ablation_summary.csv"
+    csv_path = metrics_dir / "ablation_summary.csv"
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["axis", "config", "label", "seed", "mAP", "count_error", "iou", "dice"])

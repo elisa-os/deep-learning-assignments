@@ -101,7 +101,7 @@ uv run pa1 1 --eval-only --checkpoint outputs/parte1_baseline_unet.pt  # avalia 
 uv run pa1 2                     # treino completo (30 epochs por padrão)
 uv run pa1 2 --epochs 30         # sobrescreve epochs
 uv run pa1 2 --epochs 5 --batch-size 4 --lr 1e-3   # teste rápido
-uv run pa1 2 --eval-only --checkpoint outputs/trilhaA_baseline_unet.pt  # avalia só
+uv run pa1 2 --eval-only --checkpoint outputs/checkpoints/parte2_baseline_unet.pt  # avalia só
 ```
 
 > **Pré-requisito:** o diretório `pa1/data/stage1_train/` deve existir.
@@ -112,7 +112,7 @@ Qualquer flag de override funciona com qualquer parte:
 
 ```bash
 uv run pa1 0 --epochs 10 --lr 1e-4
-uv run pa1 2 --eval-only --checkpoint outputs/trilhaA_baseline_unet.pt
+uv run pa1 2 --eval-only --checkpoint outputs/checkpoints/parte2_baseline_unet.pt
 uv run pa1 --help
 ```
 
