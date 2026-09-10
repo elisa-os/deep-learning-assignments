@@ -44,3 +44,26 @@ Este documento registra os episódios de utilização de ferramentas de Intelig�
   - **Tiling & Fusão:** Criou de forma autônoma o `pa1/tiling/mosaic.py`. A IA desenhou um algoritmo de grafo de vizinhança na fronteira dos tiles. Quando duas predições parciais colidem em uma área de overlap, elas são avaliadas via *IoU Local*. Se a colisão é válida, o algoritmo do *SciPy (connected_components)* unifica as IDs e repinta o canvas.
 * **Validação / Decisões Humanas:**
   - O usuário concedeu permissão explícita para a IA executar e modificar livremente o sistema de arquivos. O algoritmo de fusão demonstrou queda no erro de contagem de 16 células "fatiadas" para apenas 2.
+
+---
+
+## Episódio 5: Campo Receptivo, Teste de Estresse e Correção (Partes 5 e 6)
+* **Data:** 10/09/2026
+* **Ferramenta:** Antigravity / LLM
+* **Contexto e Motivação:**
+  1. Necessidade de comprovar quantitativamente a limitação de escala da U-Net (Campo Receptivo).
+  2. Implementação das perturbações sintéticas (Teste de Estresse) solicitadas no plano original.
+* **Como a IA auxiliou:**
+  - **Dedução do Campo Receptivo:** Calculou passo a passo a matemática das convoluções e poolings da U-Net, deduzindo que o RF nativo era travado em 140x140 pixels. Gerou o notebook `parte5_falhas_rf.ipynb` combinando histogramas do dataset com as piores falhas de predição do modelo.
+  - **Proposta de Correção (Atrous Convolution):** Sugeriu modificar a convolução no gargalo da U-Net alterando o parâmetro `dilation=4` para elevar o RF para 332px sem criar parâmetros adicionais. Modificou a arquitetura via argparse no `config.yaml` (`parte5_correcao`).
+  - **Teste de Estresse:** Escreveu do zero o script de perturbação `corruptions.py`, que varre o modelo base nas corrupções de Blur, Noise e Contraste em 3 intensidades e plota as curvas de degradação numéricas.
+* **Validação / Decisões Humanas:**
+  - A avaliação quantitativa da rede após a dilatação mostrou queda no mAP geral (de 0.65 para 0.56). O humano e a IA decidiram manter o resultado, compreendendo ser um comportamento físico real de Deep Learning: enquanto a dilatação ajudava em células gigantes, ela perdia resolução espacial, prejudicando o micro-alinhamento das pequenas instâncias, que são a vasta maioria.
+
+## Episódio 6: Entregáveis Finais e Refatoração de Notebook (Parte 10)
+* **Data:** 10/09/2026
+* **Ferramenta:** Antigravity / LLM
+* **Contexto e Motivação:** Empacotamento para apresentação. O `inferencia.ipynb` antigo não suportava bem 3 classes.
+* **Como a IA auxiliou:**
+  - Redesenhou o script de inferência para ser determinístico, interativo e carregar imagens limpas, plotando os gráficos em paletas coerentes e mostrando a contagem. 
+  - Auxiliou a lidar com eventuais bugs de dependências (tentativa de uso do IPEX na iGPU Intel, que foi revertida estrategicamente para evitar poluição no `pyproject.toml`).
