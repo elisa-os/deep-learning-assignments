@@ -345,3 +345,44 @@ Overrides via linha de comando (ex: `--epochs 5 --lr 1e-3`) sobrescrevem os valo
 - **Regra de histórico:** Se uma imagem com o mesmo nome já existir na raiz de `outputs/`, ela é substituída pela mais recente. Caso deseje arquivar execuções anteriores, crie subpastas dentro de `outputs/` (ex: `outputs/historico/`); o pipeline não mexe nem lê arquivos dentro de subpastas.
 - **Checkpoint de avaliação única:** Use `--eval-only --checkpoint pa1/outputs/checkpoints/parte1_baseline_unet.pt` para avaliar sem retreinar. O CSV de métricas por imagem também é gerado nesse modo.
 - **API de exportação:** A classe `PerImageMetricsWriter` está disponível em `pa1/utils/export.py` para reuso em partes subsequentes.
+
+---
+
+## 🗺️ Mapa de Execução das Partes (Atendimento ao Enunciado PA1.pdf)
+
+Conforme as diretrizes do projeto, documentamos abaixo onde cada parte exigida no documento original foi implementada e como reproduzir seus resultados:
+
+### Parte 0: Pipeline Sintético e Teste de Sanidade
+*   **Onde:** `pa1/data/synthetic.py` (Dataset analítico) e fluxo `parte0` no `config.yaml`.
+*   **Como:** Gera elipses ruidosas com sobreposição proposital para testar a convergência rápida e o pipeline de conectividade conexa antes dos dados complexos.
+*   **Reproduzir:** `uv run pa1 0`
+
+### Parte 1: Dataset DSB2018 e Baseline Semântica
+*   **Onde:** `pa1/data/dsb2018.py` (Ingestão e Estratificação por modalidade) e `pa1/main.py`.
+*   **Como:** Classifica e estratifica as imagens por background/foreground (Dark/Light/H&E). O treinamento cria a segmentação puramente semântica e gera o gráfico mostrando o colapso do mAP em altas densidades.
+*   **Reproduzir:** `uv run pa1 1`
+
+### Parte 2: Trilha A — Separação de Fronteiras e Watershed
+*   **Onde:** `pa1/data/targets.py` (Geração do Target de 3 Classes) e `pa1/postprocessing/watershed.py`.
+*   **Como:** Expande a segmentação semântica para prever as Fronteiras explicitamente. Usa o canal Interior como sementes para a transformada de Watershed.
+*   **Reproduzir:** `uv run pa1 2`
+
+### Parte 3: Estudos de Ablação (Eixo 1 e Eixo 2)
+*   **Onde:** `pa1/ablation.py`.
+*   **Como:** Compara rigorosamente os efeitos de arquitetura e loss (U-Net completa vs sem skips; Gamma=0,1,2,5). Gera agregações matemáticas (média $\pm$ desvio padrão) com seeds múltiplas para validade estatística.
+*   **Reproduzir:** `uv run pa1-ablation`
+
+### Parte 4: Inferência de Imagens Gigantes via Mosaico (Tiling)
+*   **Onde:** `pa1/tiling/mosaic.py`.
+*   **Como:** Executa janelas deslizantes (Sliding Windows) sobre um canvas gigante montado sinteticamente. Implementa um algoritmo em grafos (`scipy.sparse.csgraph`) que unifica as identificações das instâncias que sofreram cortes na margem das janelas.
+*   **Reproduzir:** `uv run pa1-mosaic`
+
+### Parte 5: Galeria de Falhas e Campo Receptivo
+*   **Onde:** `pa1/parte5_falhas_rf.ipynb` e parâmetro `dilate_bottleneck` no `pa1/models/unet.py`.
+*   **Como:** Deduzimos matematicamente o campo receptivo (140px). Identificamos que aglomerados gigantes quebram o modelo. Como intervenção, adicionamos Atrous Convolutions (`dilation=4`) no gargalo da rede (RF salta para 332px).
+*   **Reproduzir Intervenção (Treino):** `uv run pa1 5`
+
+### Parte 6: Teste de Estresse por Corrupções Sintéticas
+*   **Onde:** `pa1/stress/corruptions.py`.
+*   **Como:** Injeta Blur, Noise e redução de Contraste em 3 intensidades distintas na entrada do modelo treinado da Parte 2 (sem retreino) e desenha curvas de degradação do `mAP@[0.50:0.95]`.
+*   **Reproduzir:** `uv run pa1-stress`

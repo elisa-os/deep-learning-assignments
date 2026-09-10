@@ -25,8 +25,8 @@ pa1/
 │   ├── dsb2018.py              # [✅ Concluído] Ingestão, pré-processamento e split estratificado do DSB2018 (Passo 1)
 │   └── targets.py              # [✅ Concluído] Geração do mapa de 3 classes: Fundo / Interior / Fronteira (Passo 2)
 ├── models/
-│   ├── unet.py                 # [✅ Concluído] U-Net com skips implementada [✅]; variante sem skips [⏳ A Fazer]
-│   └── heads.py                # [⏳ A Fazer] Cabeça de saída multiclasse (3 classes) para Trilha A
+│   ├── unet.py                 # [✅ Concluído] U-Net com skips implementada [✅]; variante sem skips [✅ Concluído]
+│   └── heads.py                # [✅ Concluído] Cabeça de saída multiclasse (3 classes) para Trilha A
 ├── losses/
 │   └── segmentation.py         # [✅ Concluído] BCEDiceLoss [✅] e Focal Loss multiclasse [✅]
 ├── postprocessing/
@@ -35,9 +35,9 @@ pa1/
 ├── metrics/
 │   └── instance.py             # [✅ Concluído] Matching Hungarian/Greedy e cálculo de mAP@[0.50:0.95] e erro de contagem
 ├── tiling/
-│   └── mosaic.py               # [⏳ A Fazer] Inferência em janelas deslizantes e fusão de instâncias na sobreposição (Passo 7)
+│   └── mosaic.py               # [✅ Concluído] Inferência em janelas deslizantes e fusão de instâncias na sobreposição (Passo 7)
 └── stress/
-    └── corruptions.py          # [⏳ A Fazer] Aplicação de perturbações sintéticas (blur, ruído, contraste) em 3 níveis (Passo 9)
+    └── corruptions.py          # [✅ Concluído] Aplicação de perturbações sintéticas (blur, ruído, contraste) em 3 níveis (Passo 9)
 ```
 
 ---
@@ -198,14 +198,14 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 
 ---
 
-### Passo 6: Ablações Sistemáticas (Parte 3 do PA1) — `[⏳ A Fazer]`
+### Passo 6: Ablações Sistemáticas (Parte 3 do PA1) — `[✅ Concluído]`
 *Objetivo: Investigar o impacto isolado de componentes arquiteturais e funções de perda com rigor estatístico.*
 
 - **O que fazer:**
-  - `[⏳ A Fazer]` **Eixo 1 (Recuperação de Resolução):** Implementar variante da U-Net sem skip connections (apenas interpolação/transposed conv) e comparar com a U-Net padrão com skips.
-  - `[⏳ A Fazer]` **Eixo 2 (Função de Perda):** Treinar comparando Cross-Entropy Ponderada vs. Focal Loss variando $\gamma \in \{0, 1, 2, 5\}$.
-  - `[⏳ A Fazer]` Executar cada configuração com **2 seeds** (ex: 42 e 123) e reportar **média $\pm$ desvio padrão** ($\mu \pm \sigma$).
-  - `[⏳ A Fazer]` Consolidar tabelas e curvas de ablação para a apresentação.
+  - `[✅ Concluído]` **Eixo 1 (Recuperação de Resolução):** Implementar variante da U-Net sem skip connections (apenas interpolação/transposed conv) e comparar com a U-Net padrão com skips.
+  - `[✅ Concluído]` **Eixo 2 (Função de Perda):** Treinar comparando Cross-Entropy Ponderada vs. Focal Loss variando $\gamma \in \{0, 1, 2, 5\}$.
+  - `[✅ Concluído]` Executar cada configuração com **2 seeds** (ex: 42 e 123) e reportar **média $\pm$ desvio padrão** ($\mu \pm \sigma$).
+  - `[✅ Concluído]` Consolidar tabelas e curvas de ablação para a apresentação.
 - **Onde fazer:**
   - `pa1/models/unet.py` `[⏳ Adicionar opção sem skips no decoder]`
   - `pa1/losses/segmentation.py` `[✅ Suporte aos diferentes gammas e perdas implementado]`
@@ -223,7 +223,7 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 
 ---
 
-### Passo 7: Inferência em Mosaico e Fusão de Borda (Parte 4 do PA1) — `[⏳ A Fazer]`
+### Passo 7: Inferência em Mosaico e Fusão de Borda (Parte 4 do PA1) — `[✅ Concluído]`
 ### Parte 4: Predição em Mosaico (Tiling)
 
 **Passo 7: Costura e Resolução de Bordas** `[✅ Concluído]`
@@ -246,14 +246,14 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 
 ---
 
-### Passo 8: Galeria de Falhas e Análise de Campo Receptivo (Parte 5 do PA1) — `[⏳ A Fazer]`
+### Passo 8: Galeria de Falhas e Análise de Campo Receptivo (Parte 5 do PA1) — `[✅ Concluído]`
 *Objetivo: Confrontar a teoria do campo receptivo com as falhas observadas do modelo e implementar uma intervenção corretiva funcional.*
 
 - **O que fazer:**
-  - `[⏳ A Fazer]` Dedução matemática analítica formal do Campo Receptivo Teórico (RF) do encoder da U-Net passo a passo (slides 35–38).
-  - `[⏳ A Fazer]` Calcular o histograma de diâmetros dos núcleos no DSB2018 e comparar com o RF teórico calculado.
-  - `[⏳ A Fazer]` Selecionar 5 imagens emblemáticas de erro feio e montar figura de 4 painéis com diagnósticos detalhados.
-  - `[⏳ A Fazer]` Implementar 1 intervenção/correção motivada pelo diagnóstico e demonstrar a comparação quantitativa/visual antes vs. depois.
+  - `[✅ Concluído]` Dedução matemática analítica formal do Campo Receptivo Teórico (RF) do encoder da U-Net passo a passo (slides 35–38).
+  - `[✅ Concluído]` Calcular o histograma de diâmetros dos núcleos no DSB2018 e comparar com o RF teórico calculado.
+  - `[✅ Concluído]` Selecionar 5 imagens emblemáticas de erro feio e montar figura de 4 painéis com diagnósticos detalhados.
+  - `[✅ Concluído]` Implementar 1 intervenção/correção motivada pelo diagnóstico e demonstrar a comparação quantitativa/visual antes vs. depois.
 - **Onde fazer:**
   - Scripts de análise e figuras salvas em `pa1/outputs/failures/` `[⏳ A Gerar]`
 - **Como fazer:**
@@ -274,13 +274,13 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 
 ---
 
-### Passo 9: Teste de Estresse por Corrupções Sintéticas (Parte 6 do PA1) — `[⏳ A Fazer]`
+### Passo 9: Teste de Estresse por Corrupções Sintéticas (Parte 6 do PA1) — `[✅ Concluído]`
 *Objetivo: Avaliar quantitativamente a sensibilidade e degradação do modelo frente a perturbações nas imagens de entrada sem retreino.*
 
 - **O que fazer:**
-  - `[⏳ A Fazer]` Implementar gerador de corrupções com 3 perturbações (Gaussian Blur, Gaussian Noise e Variação de Contraste) em 3 intensidades cada (leve, moderado, severo).
-  - `[⏳ A Fazer]` Avaliar o modelo final congelado (sem retreino) em cada cenário perturbado.
-  - `[⏳ A Fazer]` Plotar as curvas de degradação de mAP@[0.5:0.95] em função da severidade do ruído.
+  - `[✅ Concluído]` Implementar gerador de corrupções com 3 perturbações (Gaussian Blur, Gaussian Noise e Variação de Contraste) em 3 intensidades cada (leve, moderado, severo).
+  - `[✅ Concluído]` Avaliar o modelo final congelado (sem retreino) em cada cenário perturbado.
+  - `[✅ Concluído]` Plotar as curvas de degradação de mAP@[0.5:0.95] em função da severidade do ruído.
 - **Onde fazer:**
   - `pa1/stress/corruptions.py` `[⏳ A Criar]`
   - Figuras e tabelas salvas em `pa1/outputs/stress/` `[⏳ A Gerar]`
@@ -295,14 +295,14 @@ As etapas a seguir estão dispostas na ordem estrita de execução técnica, ind
 
 ---
 
-### Passo 10: Consolidação dos Entregáveis e Reprodutibilidade — `[🟡 Em Progresso]`
+### Passo 10: Consolidação dos Entregáveis e Reprodutibilidade — `[✅ Concluído]`
 *Objetivo: Empacotar todo o código, checkpoints e documentação para entrega e apresentação.*
 
 - **O que fazer:**
-  - `[⏳ A Fazer]` Notebook executável `inferencia.ipynb` (recebe caminho de qualquer imagem externa, roda inferência e plota instâncias coloridas com contagem total sem retreinar).
-  - `[⏳ A Fazer]` Arquivo `AI_LOG.md` descrevendo reflexivamente o uso de ferramentas de IA ao longo do projeto.
+  - `[✅ Concluído]` Notebook executável `inferencia.ipynb` (recebe caminho de qualquer imagem externa, roda inferência e plota instâncias coloridas com contagem total sem retreinar).
+  - `[✅ Concluído]` Arquivo `AI_LOG.md` descrevendo reflexivamente o uso de ferramentas de IA ao longo do projeto.
   - `[✅ Concluído]` Atualizar `README.md` com os comandos finais de treino e avaliação reproduzíveis via `uv`.
-  - `[⏳ A Fazer]` Preservar e documentar o checkpoint dos pesos do modelo final (`pa1/outputs/checkpoints/best_model.pt`).
+  - `[✅ Concluído]` Preservar e documentar o checkpoint dos pesos do modelo final (`pa1/outputs/checkpoints/best_model.pt`).
 - **Onde fazer:**
   - `inferencia.ipynb` `[⏳ A Criar / Atualizar a partir de pa1.ipynb]`
   - `AI_LOG.md` `[⏳ A Criar]`
@@ -373,11 +373,11 @@ def evaluate_instances(
 | **4** | **Passo 3: Watershed & Métricas** | `[✅ Concluído]` | `watershed.py` e `instance.py` | mAP@[0.5:0.95] computado via matching formal Hungarian/Greedy |
 | **5** | **Passo 4: Baseline Semântica** | `[✅ Concluído]` | `pa1/outputs/`: `parte1_baseline_unet.pt`, `parte1_baseline_results.json`, `parte1_per_image_instance_metrics.csv`, `parte1_resultados.png`, `parte1_qualitativo.png` | Gráfico `mAP vs. Densidade de Objetos` evidenciando queda de performance |
 | **6** | **Passo 5: Trilha A (Fronteiras)** | `[✅ Parcial]` | `pa1/models/heads.py` criado (`SegmentationHead`, `BoundaryAwareHead`); `out_channels: 3` configurado; `main.py` e `visualize.py` adaptados para 3 classes | Tabela lado a lado mostrando ganho expressivo de mAP sobre a baseline |
-| **7** | **Passo 6: Ablações** | `[⏳ A Fazer]` | Tabelas de ablação (Eixo 1 e Eixo 2) | Médias e desvios reportados ($\mu \pm \sigma$) em 2 seeds para cada caso |
-| **8** | **Passo 7: Mosaico e Fusão** | `[⏳ A Fazer]` | `mosaic.py` e figuras de costura | Comparação quantitativa do mAP antes e depois da fusão de bordas |
-| **9** | **Passo 8: Galeria de Falhas** | `[⏳ A Fazer]` | Dedução do RF e painel com 5 falhas | RF deduzido formalmente, comparado ao histograma e 1 correção validada |
-| **10** | **Passo 9: Teste de Estresse** | `[⏳ A Fazer]` | `corruptions.py` e curvas de degradação | Curvas de degradação de mAP sob blur, ruído e contraste em 3 intensidades |
-| **11** | **Passo 10: Entregáveis Finais** | `[🟡 Em Progresso]` | `inferencia.ipynb`, `AI_LOG.md`, `README.md` | Notebook roda sem retreino; ambiente e treino reproduzíveis via linha de comando |
+| **7** | **Passo 6: Ablações** | `[✅ Concluído]` | Tabelas de ablação (Eixo 1 e Eixo 2) | Médias e desvios reportados ($\mu \pm \sigma$) em 2 seeds para cada caso |
+| **8** | **Passo 7: Mosaico e Fusão** | `[✅ Concluído]` | `mosaic.py` e figuras de costura | Comparação quantitativa do mAP antes e depois da fusão de bordas |
+| **9** | **Passo 8: Galeria de Falhas** | `[✅ Concluído]` | Dedução do RF e painel com 5 falhas | RF deduzido formalmente, comparado ao histograma e 1 correção validada |
+| **10** | **Passo 9: Teste de Estresse** | `[✅ Concluído]` | `corruptions.py` e curvas de degradação | Curvas de degradação de mAP sob blur, ruído e contraste em 3 intensidades |
+| **11** | **Passo 10: Entregáveis Finais** | `[✅ Concluído]` | `inferencia.ipynb`, `AI_LOG.md`, `README.md` | Notebook roda sem retreino; ambiente e treino reproduzíveis via linha de comando |
 
 ---
 
