@@ -432,6 +432,7 @@ def main() -> None:
         in_channels=in_channels,
         out_channels=cfg.model.out_channels,
         use_skips=cfg.model.use_skips,
+        dilate_bottleneck=cfg.model.dilate_bottleneck,
     ).to(device)
 
     # ---- Loss ----

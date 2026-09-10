@@ -56,13 +56,13 @@ class _DoubleConv(nn.Module):
     qualquer composição de funções lineares é ainda uma função linear.
     """
 
-    def __init__(self, in_ch: int, out_ch: int) -> None:
+    def __init__(self, in_ch: int, out_ch: int, dilation: int = 1) -> None:
         super().__init__()
         self.net = nn.Sequential(
-            nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(in_ch, out_ch, kernel_size=3, padding=dilation, dilation=dilation, bias=False),
             nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
-            nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=1, bias=False),
+            nn.Conv2d(out_ch, out_ch, kernel_size=3, padding=dilation, dilation=dilation, bias=False),
             nn.BatchNorm2d(out_ch),
             nn.ReLU(inplace=True),
         )
@@ -99,6 +99,7 @@ class UNet(nn.Module):
         out_channels: int = 2,
         features: list[int] | None = None,
         use_skips: bool = True,
+        dilate_bottleneck: int = 1,
     ) -> None:
         super().__init__()
         self.use_skips = use_skips
@@ -115,7 +116,7 @@ class UNet(nn.Module):
             ch = f
 
         # ---- Bottleneck (fundo do U) ----
-        self.bottleneck = _DoubleConv(features[-1], features[-1] * 2)
+        self.bottleneck = _DoubleConv(features[-1], features[-1] * 2, dilation=dilate_bottleneck)
 
         # ---- Decoder ----
         # Com skips: _DoubleConv(f*2, f)  — entrada dobrada pela concatenação.

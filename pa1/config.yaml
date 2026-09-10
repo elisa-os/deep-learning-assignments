@@ -49,3 +49,19 @@ parte2:
   lr: 1.0e-3
   checkpoint: null
   eval_only: false
+
+# ── Parte 5 — Intervenção RF: Dilatação no Gargalo ───────────────
+parte5:
+  synthetic: false
+  data_dir: pa1/data/stage1_train
+  n_samples: 100
+  batch_size: 8
+  num_workers: 2
+  in_channels: 3         # RGB (DSB2018)
+  out_channels: 3        # 3 = Trilha A (fundo/interior/fronteira)
+  use_skips: true
+  dilate_bottleneck: 4   # Intervenção Parte 5: dilatar o bottleneck para aumentar o RF
+  epochs: 30
+  lr: 1.0e-3
+  checkpoint: null
+  eval_only: false

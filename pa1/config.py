@@ -33,6 +33,7 @@ class ModelConfig:
     in_channels: int = 1
     out_channels: int = 2
     use_skips: bool = True  # False = decoder sem skip connections (ablação Eixo 1)
+    dilate_bottleneck: int = 1  # 1 = padrão, 4 = Convolução Atrous (Parte 5)
 
 
 @dataclass
@@ -125,7 +126,7 @@ def load_config(
         #   b) Flat (atual): parte2: { synthetic: false, out_channels: 3, epochs: 30, ... }
         # Campos flat são mapeados para as sub-seções correspondentes.
         _DATA_FIELDS  = {"synthetic", "data_dir", "n_samples", "batch_size", "num_workers"}
-        _MODEL_FIELDS = {"in_channels", "out_channels", "use_skips"}
+        _MODEL_FIELDS = {"in_channels", "out_channels", "use_skips", "dilate_bottleneck"}
         _TRAIN_FIELDS = {"epochs", "lr", "checkpoint", "eval_only", "loss_gamma", "loss_alpha"}
 
         flat_data  = {k: v for k, v in parte_section.items() if k in _DATA_FIELDS}
@@ -159,6 +160,7 @@ def load_config(
         seed=seed,
         output_dir=out_dir_str,
         parte=parte_int,
+        mode_tag=f"parte{parte_int}" if parte_int is not None else "custom",
         data=DataConfig(**data_raw),
         model=ModelConfig(**model_raw),
         train=TrainConfig(**train_raw),

@@ -14,6 +14,7 @@ dependencies = [
     "notebook>=7.6.2",
     "numpy>=2.4.6",
     "opencv-python-headless>=5.0.0",
+    "pandas>=3.0.5",
     "pyyaml>=6.0.3",
     "scikit-image>=0.26.0",
     "scikit-learn>=1.9.0",
@@ -25,6 +26,7 @@ dependencies = [
 pa1 = "pa1.main:main"
 pa1-ablation = "pa1.ablation:main"
 pa1-mosaic = "pa1.tiling.mosaic:main"
+pa1-stress = "pa1.stress.corruptions:main"
 
 # ─── PyTorch cu118 ────────────────────────────────────────────────────────────
 # torch>=2.6.0+cu118 é a última release compilada com CUDA 11.8, que inclui

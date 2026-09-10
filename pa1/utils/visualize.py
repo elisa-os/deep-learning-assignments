@@ -10,7 +10,11 @@ from pathlib import Path
 from typing import Sequence
 
 import matplotlib
-matplotlib.use("Agg")
+if "inline" not in matplotlib.get_backend().lower():
+    try:
+        matplotlib.use("Agg")
+    except Exception:
+        pass
 import matplotlib.pyplot as plt
 import numpy as np
 
