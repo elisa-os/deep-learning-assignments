@@ -10,7 +10,7 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import torchvision.transforms.functional as TF
+import scipy.ndimage as ndi
 
 from pa1.config import load_config
 from pa1.data import make_dsb2018_loaders
@@ -26,11 +26,11 @@ from pa1.utils import get_device
 def apply_gaussian_blur(img: torch.Tensor, sigma: float) -> torch.Tensor:
     if sigma == 0:
         return img
-    # kernel size deve ser ímpar e suficientemente grande
-    kernel_size = int(4 * sigma + 1)
-    if kernel_size % 2 == 0:
-        kernel_size += 1
-    return TF.gaussian_blur(img, kernel_size=[kernel_size, kernel_size], sigma=[sigma, sigma])
+    img_np = img.cpu().numpy()
+    blurred = np.zeros_like(img_np)
+    for c in range(img_np.shape[0]):
+        blurred[c] = ndi.gaussian_filter(img_np[c], sigma=sigma)
+    return torch.from_numpy(blurred).to(img.device)
 
 def apply_gaussian_noise(img: torch.Tensor, std: float) -> torch.Tensor:
     if std == 0:
