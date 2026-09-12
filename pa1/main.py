@@ -515,6 +515,9 @@ def main() -> None:
 
     # ---- Avaliação no conjunto de TESTE ----
     if test_loader is not None:
+        if metrics_writer is not None:
+            metrics_writer._records.clear()
+            
         print("\n=== Avaliação no Teste ===")
         test_metrics = evaluate(
             model, test_loader, device,
@@ -570,19 +573,41 @@ def main() -> None:
 
     # 1. Salva curvas de treino + mAP vs. Densidade diretamente em outputs/
     results_fig = output_path / f"{mode_tag}_resultados.png"
+    
+    if mode_tag == "parte0":
+        results_title = "Parte 0 - Teste Unitário Sintético (Mini U-Net)"
+    elif mode_tag == "parte1":
+        results_title = "Parte 1 - Baseline de Segmentação Semântica"
+    elif mode_tag == "parte2":
+        results_title = "Parte 2 - Fronteiras e Watershed"
+    else:
+        results_title = f"{mode_tag.capitalize()} - Resultados"
+        
     saved_results_path = plot_training_results(
         history=history,
         density_list=final_metrics["densities"],
         map_list=final_metrics["maps"],
         save_path=results_fig,
+        title=results_title
     )
     print(f"Gráficos de resultados e densidade salvos em: {saved_results_path}")
 
     # 2. Salva grid qualitativo 4x4 diretamente em outputs/
     qualitative_fig = output_path / f"{mode_tag}_qualitativo.png"
+    
+    if mode_tag == "parte0":
+        qual_title = "Parte 0 - Qualitativo"
+    elif mode_tag == "parte1":
+        qual_title = "Parte 1 - Qualitativo (Baseline)"
+    elif mode_tag == "parte2":
+        qual_title = "Parte 2 - Qualitativo (Fronteiras)"
+    else:
+        qual_title = f"{mode_tag.capitalize()} - Qualitativo"
+
     saved_qualitative_path = plot_qualitative_results(
         samples=final_metrics["samples"],
         save_path=qualitative_fig,
+        title=qual_title
     )
     print(f"Grid qualitativo salvo em: {saved_qualitative_path}")
 

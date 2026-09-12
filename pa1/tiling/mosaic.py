@@ -66,8 +66,10 @@ def build_mosaic(dataset, indices: list[int]) -> tuple[torch.Tensor, np.ndarray,
         if mask_fg.any():
             current_max_id = inst_shifted.max()
             
-    # Criar uma imagem RGB para plotagem (desnormalizando clipado)
-    rgb_vis = mosaic_img.permute(1, 2, 0).numpy()
+    # Criar uma imagem RGB para plotagem (desnormalizando)
+    mean = torch.tensor([0.485, 0.456, 0.406]).view(3, 1, 1)
+    std = torch.tensor([0.229, 0.224, 0.225]).view(3, 1, 1)
+    rgb_vis = (mosaic_img * std + mean).permute(1, 2, 0).numpy()
     rgb_vis = np.clip(rgb_vis, 0, 1)
     
     return mosaic_img, mosaic_gt, rgb_vis
@@ -264,6 +266,71 @@ def plot_mosaic_results(
     print(f"[Mosaic] Gráfico salvo em: {save_path}")
 
 
+def plot_map_comparison(naive_map: float, fusion_map: float, save_path: Path):
+    fig, ax = plt.subplots(figsize=(6, 5))
+    categories = ['Sem Fusão', 'Com Fusão']
+    values = [naive_map, fusion_map]
+    bars = ax.bar(categories, values, color=['#d9534f', '#5cb85c'], edgecolor='black')
+    
+    ax.set_ylabel('mAP (Hungarian)', fontsize=12)
+    ax.set_title('Impacto da Fusão de Bordas no mAP', fontsize=14, pad=15)
+    max_val = max(values)
+    if max_val > 0:
+        ax.set_ylim(0, max_val * 1.2)
+    else:
+        ax.set_ylim(0, 1.0)
+    
+    for bar in bars:
+        height = bar.get_height()
+        ax.annotate(f'{height:.3f}',
+                    xy=(bar.get_x() + bar.get_width() / 2, height),
+                    xytext=(0, 3),
+                    textcoords="offset points",
+                    ha='center', va='bottom', fontsize=12, fontweight='bold')
+                    
+    plt.tight_layout()
+    fig.savefig(save_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[Mosaic] Gráfico de mAP salvo em: {save_path}")
+
+
+def plot_zoom_comparison(rgb_img: np.ndarray, pred_naive: np.ndarray, pred_fusion: np.ndarray, save_path: Path):
+    # Recorte na interseção central: y de 200 a 312, x de 200 a 312 (112x112)
+    y1, y2 = 200, 312
+    x1, x2 = 200, 312
+    
+    zoom_img = rgb_img[y1:y2, x1:x2]
+    zoom_naive = pred_naive[y1:y2, x1:x2]
+    zoom_fusion = pred_fusion[y1:y2, x1:x2]
+    
+    fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+    
+    np.random.seed(42)
+    colors = np.random.rand(10000, 3)
+    colors[0] = [0, 0, 0] 
+    cmap = mcolors.ListedColormap(colors)
+    
+    axs[0].imshow(zoom_img)
+    axs[0].set_title("1. Recorte (Zoom na fronteira)", fontsize=14)
+    
+    axs[1].imshow(zoom_naive, cmap=cmap, interpolation="nearest")
+    axs[1].set_title("2. Sem Fusão (Células cortadas)", fontsize=14)
+    
+    axs[2].imshow(zoom_fusion, cmap=cmap, interpolation="nearest")
+    axs[2].set_title("3. Com Fusão (Células consertadas)", fontsize=14)
+    
+    for ax in axs:
+        ax.axis('off')
+        # Desenha as linhas da fronteira (em x=256 e y=256 original -> transladado para x=56, y=56 no zoom)
+        ax.axhline(y=256 - y1, color='yellow', linestyle='--', linewidth=2, alpha=0.7)
+        ax.axvline(x=256 - x1, color='yellow', linestyle='--', linewidth=2, alpha=0.7)
+        
+    plt.tight_layout()
+    fig.savefig(save_path, dpi=200, bbox_inches="tight")
+    plt.close(fig)
+    print(f"[Mosaic] Gráfico de Zoom salvo em: {save_path}")
+
+
 def main():
     print("="*70)
     print(" Parte 4: Mosaico e Tiling (Resolução de Instâncias na Borda)")
@@ -321,8 +388,18 @@ def main():
     
     out_dir = Path(cfg.output_dir)
     coords = extract_patches_coords(512, 512, 256, 192)
+    
+    # 1. Gráfico Principal (Mosaico Completo)
     save_fig = out_dir / "parte4_mosaic_fusion.png"
     plot_mosaic_results(rgb_vis, mosaic_gt, pred_naive, pred_fusion, coords, save_path=save_fig)
+    
+    # 2. Gráfico do mAP
+    save_map = out_dir / "parte4_map_comparison.png"
+    plot_map_comparison(naive_metrics['mAP'], fusion_metrics['mAP'], save_path=save_map)
+    
+    # 3. Gráfico do Zoom
+    save_zoom = out_dir / "parte4_zoom_fusion.png"
+    plot_zoom_comparison(rgb_vis, pred_naive, pred_fusion, save_path=save_zoom)
     
     print("\n✅ Parte 4 finalizada com sucesso.")
 

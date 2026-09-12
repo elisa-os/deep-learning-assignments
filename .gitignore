@@ -17,5 +17,4 @@ build/
 # OS
 .DS_Store
 Thumbs.db
-pa1/outputs/**/*.pt
 .bruno/
