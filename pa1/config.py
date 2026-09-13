@@ -26,6 +26,7 @@ class DataConfig:
     n_samples: int = 500
     batch_size: int = 8
     num_workers: int = 2
+    use_wandb: bool = False
 
 
 @dataclass

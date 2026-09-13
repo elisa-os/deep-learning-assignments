@@ -174,7 +174,12 @@ def _bar_chart(
     ax.set_xticklabels(labels, fontsize=10)
     ax.set_ylabel(ylabel, fontsize=11)
     ax.set_title(title, fontsize=13, fontweight="bold")
-    ax.set_ylim(0, min(1.05, max(means) + max(stds) + 0.08))
+    # Eixo Y: mAP cabe em [0, 1]; métricas de contagem/erro podem passar de 1
+    if "mAP" in ylabel:
+        y_max = min(1.05, max(means) + max(stds) + 0.08)
+    else:
+        y_max = max(means) + max(stds) + 0.08
+    ax.set_ylim(0, y_max)
     ax.grid(axis="y", linestyle="--", alpha=0.4)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
@@ -291,11 +296,22 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Rodar só uma config específica (ex: eixo1_sem_skips). Útil para retomar runs interrompidas.",
     )
+    p.add_argument(
+        "--plot-only",
+        action="store_true",
+        default=False,
+        help="Gerar gráficos a partir do JSON já salvo (sem treinar). Requer "
+             "pa1/outputs/parte3_ablation/metrics/ablation_results.json existente.",
+    )
     return p.parse_args()
 
 
 def main() -> None:
     args = parse_args()
+
+    if args.plot_only:
+        _plot_only(args)
+        return
 
     # ── Localiza o config.yaml base ───────────────────────────────────────────
     if args.config:
@@ -403,6 +419,47 @@ def main() -> None:
     print_summary_table(results)
 
     print(f"\n✅ Ablações concluídas. Artefatos em: {output_path}\n")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Modo plot-only (sem treino)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _resolve_config_path(args) -> Path:
+    """Idempotica com a lógica do main; retorna o caminho do config.yaml."""
+    if args.config:
+        cfg_path = Path(args.config)
+    elif Path("pa1/config.yaml").exists():
+        cfg_path = Path("pa1/config.yaml")
+    elif Path("config.yaml").exists():
+        cfg_path = Path("config.yaml")
+    else:
+        raise FileNotFoundError("config.yaml não encontrado. Rode na raiz do repositório.")
+    return cfg_path
+
+
+def _plot_only(args) -> None:
+    """Regenera os gráficos a partir do JSON já salvo, sem treinar.
+
+    Pega o output_dir resolvido pelo config.yaml (mesma lógica do main), lê
+    o JSON de resultados e chama ``plot_ablation_results``. Não importa torch
+    nem passa por dataset/loaders — matplotlib + numpy apenas.
+    """
+    cfg_path = _resolve_config_path(args)
+    base_cfg = load_config(cfg_path, parte="2")
+    output_path = Path(base_cfg.output_dir)
+
+    metrics_json = output_path / "parte3_ablation" / "metrics" / "ablation_results.json"
+    if not metrics_json.exists():
+        raise FileNotFoundError(
+            f"Resultados não encontrados em {metrics_json}. "
+            "Execute o pipeline de treino antes de usar --plot-only."
+        )
+
+    results = json.loads(metrics_json.read_text())
+    print("Gerando gráficos de ablação a partir dos resultados salvos...")
+    plot_ablation_results(results, output_path)
+    print("✅ Gráficos regenerados.\n")
 
 
 if __name__ == "__main__":
